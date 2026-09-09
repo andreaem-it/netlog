@@ -1,0 +1,11 @@
+allowBuilds:
+  '@prisma/engines': true
+  esbuild: true
+  sharp: true
+  embedded-postgres: true
+  '@embedded-postgres/darwin-arm64': true
+  prisma: true
+  unrs-resolver: true
+  '@embedded-postgres/darwin-arm64': set this to true or false
+  prisma: set this to true or false
+  unrs-resolver: set this to true or false
