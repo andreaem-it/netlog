@@ -52,7 +52,17 @@ export async function loginAction(
   if (!parsed.success)
     return { status: "error", message: "Controlla email e password." };
   try {
-    await signIn("credentials", { ...parsed.data, redirect: false });
+    const result = await signIn("credentials", {
+      ...parsed.data,
+      redirect: false,
+    });
+    if (result?.error) {
+      return {
+        status: "error",
+        message:
+          "Accesso non riuscito. Controlla email e password o attendi qualche minuto prima di riprovare.",
+      };
+    }
   } catch (error) {
     if (error instanceof AuthError)
       return {

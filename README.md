@@ -61,7 +61,7 @@ Impostare `SEED_DEMO=true` e una `SEED_PASSWORD` di almeno 12 caratteri in `.env
 pnpm db:seed
 ```
 
-Il seed crea 20 utenti sintetici, ad esempio `giulia@demo.example.test`, con la password locale configurata. È ripetibile: non modifica account demo già presenti e non ne cambia la password. Rifiuta esecuzioni in produzione e host database non locali. I profili demo esistono nel database, non nei componenti di produzione.
+Il seed crea 20 utenti sintetici, ad esempio `giulia@demo.example.test`, con la password locale configurata. È ripetibile e aggiorna la password dei soli account demo quando `SEED_PASSWORD` cambia. Rifiuta esecuzioni in produzione e host database non locali. I profili demo esistono nel database, non nei componenti di produzione.
 
 ## Verifiche
 

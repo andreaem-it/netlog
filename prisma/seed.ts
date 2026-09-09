@@ -37,7 +37,7 @@ try {
   const passwordHash = await hash(process.env.SEED_PASSWORD, { algorithm: 2, memoryCost: 19456, timeCost: 2, parallelism: 1 });
   for (const [index, [name, username, city, bio]] of people.entries()) {
     await db.user.upsert({
-      where: { email: `${username}@demo.example.test` }, update: {},
+      where: { email: `${username}@demo.example.test` }, update: { passwordHash },
       create: { id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`, name,
         email: `${username}@demo.example.test`, passwordHash,
         profile: { create: { username, city, bio } } },
