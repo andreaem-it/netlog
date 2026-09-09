@@ -46,63 +46,63 @@ enum NotificationType {
 }
 
 model User {
-  id                String     @id @default(uuid()) @db.Uuid
-  email             String     @unique @db.VarChar(254)
-  emailVerified     DateTime?   @map("email_verified") @db.Timestamptz(3)
-  passwordHash      String?    @map("password_hash")
-  name              String     @db.VarChar(60)
-  image             String?
-  status            UserStatus @default(ACTIVE)
-  sessionVersion    Int        @default(0) @map("session_version")
-  lastSeenAt        DateTime?  @map("last_seen_at") @db.Timestamptz(3)
-  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
-  profile           Profile?
-  accounts          Account[]
-  sessions          Session[]
+  id                  String                    @id @default(uuid()) @db.Uuid
+  email               String                    @unique @db.VarChar(254)
+  emailVerified       DateTime?                 @map("email_verified") @db.Timestamptz(3)
+  passwordHash        String?                   @map("password_hash")
+  name                String                    @db.VarChar(60)
+  image               String?
+  status              UserStatus                @default(ACTIVE)
+  sessionVersion      Int                       @default(0) @map("session_version")
+  lastSeenAt          DateTime?                 @map("last_seen_at") @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  profile             Profile?
+  accounts            Account[]
+  sessions            Session[]
   passwordResetTokens PasswordResetToken[]
-  friendshipsLow    Friendship[] @relation("FriendLow")
-  friendshipsHigh   Friendship[] @relation("FriendHigh")
-  sentRequests      FriendRequest[] @relation("RequestSender")
-  receivedRequests  FriendRequest[] @relation("RequestRecipient")
-  blocks            Block[] @relation("Blocker")
-  blockedBy         Block[] @relation("Blocked")
-  media             MediaAsset[]
-  posts             Post[]
-  comments          Comment[]
-  likes             Like[]
-  views             ProfileView[]
-  notifications     Notification[] @relation("NotificationRecipient")
-  notificationsActed Notification[] @relation("NotificationActor")
-  conversationsLow  Conversation[] @relation("ConversationLow")
-  conversationsHigh Conversation[] @relation("ConversationHigh")
-  participations    ConversationParticipant[]
+  friendshipsLow      Friendship[]              @relation("FriendLow")
+  friendshipsHigh     Friendship[]              @relation("FriendHigh")
+  sentRequests        FriendRequest[]           @relation("RequestSender")
+  receivedRequests    FriendRequest[]           @relation("RequestRecipient")
+  blocks              Block[]                   @relation("Blocker")
+  blockedBy           Block[]                   @relation("Blocked")
+  media               MediaAsset[]
+  posts               Post[]
+  comments            Comment[]
+  likes               Like[]
+  views               ProfileView[]
+  notifications       Notification[]            @relation("NotificationRecipient")
+  notificationsActed  Notification[]            @relation("NotificationActor")
+  conversationsLow    Conversation[]            @relation("ConversationLow")
+  conversationsHigh   Conversation[]            @relation("ConversationHigh")
+  participations      ConversationParticipant[]
 
   @@index([createdAt, id])
   @@map("users")
 }
 
 model Profile {
-  id                String @id @default(uuid()) @db.Uuid
-  userId            String @unique @map("user_id") @db.Uuid
-  username          String @unique @db.VarChar(24)
-  bio               String @default("") @db.VarChar(500)
-  city              String? @db.VarChar(80)
-  birthDate         DateTime? @map("birth_date") @db.Date
-  visibility        Visibility @default(PUBLIC)
-  discoverable      Boolean @default(true)
-  showOnline        Boolean @default(false) @map("show_online")
-  recordVisits      Boolean @default(false) @map("record_visits")
-  showVisitors      Boolean @default(false) @map("show_visitors")
-  notifyVisits      Boolean @default(false) @map("notify_visits")
+  id                String            @id @default(uuid()) @db.Uuid
+  userId            String            @unique @map("user_id") @db.Uuid
+  username          String            @unique @db.VarChar(24)
+  bio               String            @default("") @db.VarChar(500)
+  city              String?           @db.VarChar(80)
+  birthDate         DateTime?         @map("birth_date") @db.Date
+  visibility        Visibility        @default(PUBLIC)
+  discoverable      Boolean           @default(true)
+  showOnline        Boolean           @default(false) @map("show_online")
+  recordVisits      Boolean           @default(false) @map("record_visits")
+  showVisitors      Boolean           @default(false) @map("show_visitors")
+  notifyVisits      Boolean           @default(false) @map("notify_visits")
   messagePermission MessagePermission @default(FRIENDS) @map("message_permission")
-  avatarId          String? @map("avatar_id") @db.Uuid
-  coverId           String? @map("cover_id") @db.Uuid
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  avatar            MediaAsset? @relation("ProfileAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
-  cover             MediaAsset? @relation("ProfileCover", fields: [coverId], references: [id], onDelete: SetNull)
+  avatarId          String?           @map("avatar_id") @db.Uuid
+  coverId           String?           @map("cover_id") @db.Uuid
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avatar            MediaAsset?       @relation("ProfileAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
+  cover             MediaAsset?       @relation("ProfileCover", fields: [coverId], references: [id], onDelete: SetNull)
   views             ProfileView[]
 
   @@index([createdAt, id])
@@ -110,11 +110,11 @@ model Profile {
 }
 
 model Account {
-  id                String @id @default(uuid()) @db.Uuid
-  userId            String @map("user_id") @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @map("user_id") @db.Uuid
   type              String
   provider          String
-  providerAccountId String @map("provider_account_id")
+  providerAccountId String  @map("provider_account_id")
   refresh_token     String?
   access_token      String?
   expires_at        Int?
@@ -122,7 +122,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -130,11 +130,11 @@ model Account {
 }
 
 model Session {
-  id           String @id @default(uuid()) @db.Uuid
-  sessionToken String @unique @map("session_token")
-  userId       String @map("user_id") @db.Uuid
+  id           String   @id @default(uuid()) @db.Uuid
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
   expires      DateTime @db.Timestamptz(3)
-  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expires])
@@ -143,7 +143,7 @@ model Session {
 
 model VerificationToken {
   identifier String
-  token      String @unique
+  token      String   @unique
   expires    DateTime @db.Timestamptz(3)
 
   @@unique([identifier, token])
@@ -152,13 +152,13 @@ model VerificationToken {
 }
 
 model PasswordResetToken {
-  id        String @id @default(uuid()) @db.Uuid
-  userId    String @map("user_id") @db.Uuid
-  tokenHash String @unique @map("token_hash")
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
   usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -166,12 +166,12 @@ model PasswordResetToken {
 }
 
 model Friendship {
-  id         String @id @default(uuid()) @db.Uuid
-  userLowId  String @map("user_low_id") @db.Uuid
-  userHighId String @map("user_high_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
+  userLowId  String   @map("user_low_id") @db.Uuid
+  userHighId String   @map("user_high_id") @db.Uuid
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  userLow    User @relation("FriendLow", fields: [userLowId], references: [id], onDelete: Cascade)
-  userHigh   User @relation("FriendHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+  userLow    User     @relation("FriendLow", fields: [userLowId], references: [id], onDelete: Cascade)
+  userHigh   User     @relation("FriendHigh", fields: [userHighId], references: [id], onDelete: Cascade)
 
   @@unique([userLowId, userHighId])
   @@index([userLowId, createdAt, id])
@@ -180,14 +180,14 @@ model Friendship {
 }
 
 model FriendRequest {
-  id          String @id @default(uuid()) @db.Uuid
-  senderId    String @map("sender_id") @db.Uuid
-  recipientId String @map("recipient_id") @db.Uuid
-  status      RequestStatus @default(PENDING)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  respondedAt DateTime? @map("responded_at") @db.Timestamptz(3)
-  sender      User @relation("RequestSender", fields: [senderId], references: [id], onDelete: Cascade)
-  recipient   User @relation("RequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid()) @db.Uuid
+  senderId      String         @map("sender_id") @db.Uuid
+  recipientId   String         @map("recipient_id") @db.Uuid
+  status        RequestStatus  @default(PENDING)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  respondedAt   DateTime?      @map("responded_at") @db.Timestamptz(3)
+  sender        User           @relation("RequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient     User           @relation("RequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   notifications Notification[]
 
   @@index([recipientId, status, createdAt, id])
@@ -196,12 +196,12 @@ model FriendRequest {
 }
 
 model Block {
-  id        String @id @default(uuid()) @db.Uuid
-  blockerId String @map("blocker_id") @db.Uuid
-  blockedId String @map("blocked_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  blocker   User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
-  blocked   User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
   @@index([blockedId, blockerId])
@@ -209,18 +209,18 @@ model Block {
 }
 
 model MediaAsset {
-  id         String @id @default(uuid()) @db.Uuid
-  ownerId    String @map("owner_id") @db.Uuid
-  storageKey String @unique @map("storage_key")
-  mimeType   String @map("mime_type")
+  id         String      @id @default(uuid()) @db.Uuid
+  ownerId    String      @map("owner_id") @db.Uuid
+  storageKey String      @unique @map("storage_key")
+  mimeType   String      @map("mime_type")
   size       Int
   width      Int
   height     Int
   status     MediaStatus @default(PENDING)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  owner      User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  avatars    Profile[] @relation("ProfileAvatar")
-  covers     Profile[] @relation("ProfileCover")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  avatars    Profile[]   @relation("ProfileAvatar")
+  covers     Profile[]   @relation("ProfileCover")
   postImages PostImage[]
 
   @@index([ownerId, createdAt, id])
@@ -228,16 +228,16 @@ model MediaAsset {
 }
 
 model Post {
-  id         String @id @default(uuid()) @db.Uuid
-  authorId   String @map("author_id") @db.Uuid
-  body       String @default("") @db.VarChar(5000)
-  visibility Visibility @default(FRIENDS)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-  author     User @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  images     PostImage[]
-  comments   Comment[]
-  likes      Like[]
+  id            String         @id @default(uuid()) @db.Uuid
+  authorId      String         @map("author_id") @db.Uuid
+  body          String         @default("") @db.VarChar(5000)
+  visibility    Visibility     @default(FRIENDS)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images        PostImage[]
+  comments      Comment[]
+  likes         Like[]
   notifications Notification[]
 
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
@@ -245,12 +245,12 @@ model Post {
 }
 
 model PostImage {
-  id       String @id @default(uuid()) @db.Uuid
-  postId   String @map("post_id") @db.Uuid
-  assetId  String @map("asset_id") @db.Uuid
+  id       String     @id @default(uuid()) @db.Uuid
+  postId   String     @map("post_id") @db.Uuid
+  assetId  String     @map("asset_id") @db.Uuid
   position Int
-  alt      String? @db.VarChar(300)
-  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  alt      String?    @db.VarChar(300)
+  post     Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   asset    MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@unique([postId, position])
@@ -260,14 +260,14 @@ model PostImage {
 }
 
 model Comment {
-  id        String @id @default(uuid()) @db.Uuid
-  postId    String @map("post_id") @db.Uuid
-  authorId  String @map("author_id") @db.Uuid
-  body      String @db.VarChar(2000)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid()) @db.Uuid
+  postId        String         @map("post_id") @db.Uuid
+  authorId      String         @map("author_id") @db.Uuid
+  body          String         @db.VarChar(2000)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   notifications Notification[]
 
   @@index([postId, createdAt, id])
@@ -276,11 +276,11 @@ model Comment {
 }
 
 model Like {
-  userId    String @map("user_id") @db.Uuid
-  postId    String @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
   @@index([postId])
@@ -288,12 +288,12 @@ model Like {
 }
 
 model ProfileView {
-  id        String @id @default(uuid()) @db.Uuid
-  viewerId  String @map("viewer_id") @db.Uuid
-  profileId String @map("profile_id") @db.Uuid
-  viewedAt  DateTime @default(now()) @map("viewed_at") @db.Timestamptz(3)
-  viewer    User @relation(fields: [viewerId], references: [id], onDelete: Cascade)
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid()) @db.Uuid
+  viewerId      String         @map("viewer_id") @db.Uuid
+  profileId     String         @map("profile_id") @db.Uuid
+  viewedAt      DateTime       @default(now()) @map("viewed_at") @db.Timestamptz(3)
+  viewer        User           @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  profile       Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
   notifications Notification[]
 
   @@index([profileId, viewedAt(sort: Desc), id(sort: Desc)])
@@ -302,25 +302,25 @@ model ProfileView {
 }
 
 model Notification {
-  id             String @id @default(uuid()) @db.Uuid
-  recipientId    String @map("recipient_id") @db.Uuid
-  actorId        String? @map("actor_id") @db.Uuid
-  type           NotificationType
-  friendRequestId String? @map("friend_request_id") @db.Uuid
-  postId         String? @map("post_id") @db.Uuid
-  commentId      String? @map("comment_id") @db.Uuid
-  profileViewId  String? @map("profile_view_id") @db.Uuid
-  conversationId String? @map("conversation_id") @db.Uuid
-  dedupeKey      String? @unique @map("dedupe_key")
-  readAt         DateTime? @map("read_at") @db.Timestamptz(3)
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  recipient      User @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  actor          User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
-  friendRequest  FriendRequest? @relation(fields: [friendRequestId], references: [id], onDelete: SetNull)
-  post           Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
-  comment        Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
-  profileView    ProfileView? @relation(fields: [profileViewId], references: [id], onDelete: SetNull)
-  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  id              String           @id @default(uuid()) @db.Uuid
+  recipientId     String           @map("recipient_id") @db.Uuid
+  actorId         String?          @map("actor_id") @db.Uuid
+  type            NotificationType
+  friendRequestId String?          @map("friend_request_id") @db.Uuid
+  postId          String?          @map("post_id") @db.Uuid
+  commentId       String?          @map("comment_id") @db.Uuid
+  profileViewId   String?          @map("profile_view_id") @db.Uuid
+  conversationId  String?          @map("conversation_id") @db.Uuid
+  dedupeKey       String?          @unique @map("dedupe_key")
+  readAt          DateTime?        @map("read_at") @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  recipient       User             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor           User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  friendRequest   FriendRequest?   @relation(fields: [friendRequestId], references: [id], onDelete: SetNull)
+  post            Post?            @relation(fields: [postId], references: [id], onDelete: SetNull)
+  comment         Comment?         @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  profileView     ProfileView?     @relation(fields: [profileViewId], references: [id], onDelete: SetNull)
+  conversation    Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
 
   @@index([recipientId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([actorId])
@@ -333,13 +333,13 @@ model Notification {
 }
 
 model Conversation {
-  id            String @id @default(uuid()) @db.Uuid
-  userLowId     String @map("user_low_id") @db.Uuid
-  userHighId    String @map("user_high_id") @db.Uuid
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  lastMessageAt DateTime? @map("last_message_at") @db.Timestamptz(3)
-  userLow       User @relation("ConversationLow", fields: [userLowId], references: [id], onDelete: Cascade)
-  userHigh      User @relation("ConversationHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+  id            String                    @id @default(uuid()) @db.Uuid
+  userLowId     String                    @map("user_low_id") @db.Uuid
+  userHighId    String                    @map("user_high_id") @db.Uuid
+  createdAt     DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastMessageAt DateTime?                 @map("last_message_at") @db.Timestamptz(3)
+  userLow       User                      @relation("ConversationLow", fields: [userLowId], references: [id], onDelete: Cascade)
+  userHigh      User                      @relation("ConversationHigh", fields: [userHighId], references: [id], onDelete: Cascade)
   participants  ConversationParticipant[]
   messages      Message[]
   notifications Notification[]
@@ -350,14 +350,14 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  conversationId   String @map("conversation_id") @db.Uuid
-  userId           String @map("user_id") @db.Uuid
-  joinedAt         DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
-  lastReadMessageId String? @map("last_read_message_id") @db.Uuid
-  archivedAt       DateTime? @map("archived_at") @db.Timestamptz(3)
-  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages         Message[] @relation("MessageSender")
+  conversationId    String       @map("conversation_id") @db.Uuid
+  userId            String       @map("user_id") @db.Uuid
+  joinedAt          DateTime     @default(now()) @map("joined_at") @db.Timestamptz(3)
+  lastReadMessageId String?      @map("last_read_message_id") @db.Uuid
+  archivedAt        DateTime?    @map("archived_at") @db.Timestamptz(3)
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          Message[]    @relation("MessageSender")
 
   @@id([conversationId, userId])
   @@index([userId, conversationId])
@@ -365,13 +365,13 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String @id @default(uuid()) @db.Uuid
-  conversationId String @map("conversation_id") @db.Uuid
-  senderId       String @map("sender_id") @db.Uuid
-  clientId       String @map("client_id") @db.Uuid
-  body           String @db.VarChar(5000)
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id             String                  @id @default(uuid()) @db.Uuid
+  conversationId String                  @map("conversation_id") @db.Uuid
+  senderId       String                  @map("sender_id") @db.Uuid
+  clientId       String                  @map("client_id") @db.Uuid
+  body           String                  @db.VarChar(5000)
+  createdAt      DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  conversation   Conversation            @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         ConversationParticipant @relation("MessageSender", fields: [conversationId, senderId], references: [conversationId, userId], onDelete: Cascade)
 
   @@unique([conversationId, senderId, clientId])
@@ -381,9 +381,9 @@ model Message {
 }
 
 model RateLimitBucket {
-  key         String @id
-  count       Int @default(1)
-  expiresAt   DateTime @map("expires_at") @db.Timestamptz(3)
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
 
   @@index([expiresAt])
   @@map("rate_limit_buckets")

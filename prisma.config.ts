@@ -3,5 +3,9 @@ import { defineConfig } from "prisma/config";
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: { path: "prisma/migrations", seed: "tsx prisma/seed.ts" },
-  datasource: { url: process.env.DATABASE_URL ?? "postgresql://social:social_local_only@127.0.0.1:5432/social" },
+  datasource: {
+    url:
+      process.env.DATABASE_URL ??
+      "postgresql://social:social_local_only@127.0.0.1:5432/social",
+  },
 });

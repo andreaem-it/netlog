@@ -1,11 +1,15 @@
+overrides:
+  nodemailer: 10.0.1
+  deepmerge-ts: 8.0.0
+  mysql2: 3.23.1
 allowBuilds:
-  '@prisma/engines': true
+  "@prisma/engines": true
   esbuild: true
   sharp: true
   embedded-postgres: true
-  '@embedded-postgres/darwin-arm64': true
+  "@embedded-postgres/darwin-arm64": true
+  "@embedded-postgres/darwin-x64": true
+  "@embedded-postgres/linux-x64": true
+  "@embedded-postgres/linux-arm64": true
   prisma: true
   unrs-resolver: true
-  '@embedded-postgres/darwin-arm64': set this to true or false
-  prisma: set this to true or false
-  unrs-resolver: set this to true or false
