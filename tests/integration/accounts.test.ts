@@ -313,6 +313,19 @@ describe("identity and authorization on PostgreSQL", () => {
     expect(await getRelationship(a.id, "marco")).toEqual({ kind: "friends" });
     expect(await db.friendRequest.count({ where: { status: "PENDING" } })).toBe(0);
   });
+  it("survives a duplicate concurrent accept of the same request (double-click)", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    const requestId = pending.incoming[0]!.requestId;
+    await Promise.allSettled([
+      respondToFriendRequest(b.id, requestId, true),
+      respondToFriendRequest(b.id, requestId, true),
+    ]);
+    expect(await db.friendship.count()).toBe(1);
+    expect(await getRelationship(a.id, "marco")).toEqual({ kind: "friends" });
+  });
   it("never ends up with both a friendship and a duplicate pending request under concurrency", async () => {
     const a = await account("giulia");
     const b = await account("marco");

@@ -53,9 +53,8 @@ export async function respondToFriendRequestAction(form: FormData) {
   const requestId = String(form.get("requestId") ?? "");
   const accept = form.get("accept") === "true";
   await consumeRateLimit("friend-response", actor.id, 60, 3600);
-  await respondToFriendRequest(actor.id, requestId, accept).catch((error) => {
-    // ponytail: temporary diagnostic, revert once the missing-friendship bug is found
-    console.error("friend_response_failed", error);
+  await respondToFriendRequest(actor.id, requestId, accept).catch(() => {
+    // The request may have been withdrawn or already answered; nothing to do.
   });
   revalidatePath("/amici");
 }

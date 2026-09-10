@@ -44,10 +44,16 @@ export async function sendFriendRequest(actorId: string, targetUsername: string)
         select: { id: true },
       });
       if (reverse) {
-        await tx.friendRequest.update({
-          where: { id: reverse.id },
+        // Status-guarded like respondToFriendRequest: a concurrent duplicate
+        // call finds 0 rows and never attempts the friendship insert.
+        const updated = await tx.friendRequest.updateMany({
+          where: { id: reverse.id, status: "PENDING" },
           data: { status: "ACCEPTED", respondedAt: new Date() },
         });
+        if (updated.count === 0)
+          throw new FriendActionError(
+            "Avete già una richiesta o un'amicizia in corso.",
+          );
         await tx.friendship.create({ data: orderedPair(actorId, target.id) });
         return { status: "friends" as const };
       }
@@ -72,26 +78,26 @@ export async function respondToFriendRequest(
   accept: boolean,
 ) {
   await db.$transaction(async (tx) => {
-    const request = await tx.friendRequest.findUnique({
-      where: { id: requestId },
-    });
-    if (
-      !request ||
-      request.recipientId !== actorId ||
-      request.status !== "PENDING"
-    )
-      throw new FriendActionError("Questa richiesta non è più disponibile.");
-    await tx.friendRequest.update({
-      where: { id: requestId },
+    // Atomic status-guarded update: a concurrent duplicate submit for the
+    // same request finds 0 rows here (status no longer PENDING) and bails
+    // out before ever attempting to create the friendship.
+    const updated = await tx.friendRequest.updateMany({
+      where: { id: requestId, recipientId: actorId, status: "PENDING" },
       data: {
         status: accept ? "ACCEPTED" : "REJECTED",
         respondedAt: new Date(),
       },
     });
-    if (accept)
+    if (updated.count === 0)
+      throw new FriendActionError("Questa richiesta non è più disponibile.");
+    if (accept) {
+      const request = await tx.friendRequest.findUniqueOrThrow({
+        where: { id: requestId },
+      });
       await tx.friendship.create({
         data: orderedPair(request.senderId, request.recipientId),
       });
+    }
   });
 }
 
