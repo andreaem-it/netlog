@@ -12,7 +12,9 @@ export async function validateSession(
       id: true,
       name: true,
       email: true,
-      profile: { select: { username: true } },
+      profile: {
+        select: { username: true, avatar: { select: { storageKey: true } } },
+      },
     },
   });
 }

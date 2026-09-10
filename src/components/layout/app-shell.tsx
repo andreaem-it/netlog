@@ -9,7 +9,7 @@ export function AppShell({
   user,
   children,
 }: {
-  user: { name: string; username: string };
+  user: { name: string; username: string; avatarUrl?: string | null };
   children: React.ReactNode;
 }) {
   return (
@@ -19,7 +19,7 @@ export function AppShell({
         <span className="header-caption">Il tuo spazio. Le tue persone.</span>
         <div className="header-right">
           <Link className="profile-link" href={`/u/${user.username}`}>
-            <Avatar name={user.name} />
+            <Avatar name={user.name} src={user.avatarUrl} />
             <span>{user.name}</span>
           </Link>
           <form action={logoutAction}>

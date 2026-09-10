@@ -8,7 +8,11 @@ export default async function SocialLayout({
   const user = await requireUser();
   return (
     <AppShell
-      user={{ name: user.name, username: user.profile?.username ?? "" }}
+      user={{
+        name: user.name,
+        username: user.profile?.username ?? "",
+        avatarUrl: user.profile?.avatar?.storageKey ?? null,
+      }}
     >
       {children}
     </AppShell>
