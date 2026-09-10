@@ -5,6 +5,7 @@ import { clientIdentity } from "@/server/security/rate-limit";
 import { db } from "@/server/db/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
   pages: { signIn: "/login" },
   providers: [
@@ -42,9 +43,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   logger: {
-    error(error) {
-      // ponytail: temporary diagnostic, revert once the Neon 503 root cause is confirmed
-      console.error("authentication_failed", error.name, error.message, error.cause);
+    error() {
+      console.error("authentication_failed");
     },
   },
 });
