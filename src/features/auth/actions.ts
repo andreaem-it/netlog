@@ -14,6 +14,7 @@ import {
 } from "@/server/security/rate-limit";
 import {
   AccountInputError,
+  deleteAccount,
   registerAccount,
   requestPasswordReset,
   resetPassword,
@@ -168,4 +169,22 @@ export async function resendVerificationEmailAction(): Promise<FormState> {
     status: "success",
     message: "Ti abbiamo inviato una nuova email di conferma.",
   };
+}
+
+export async function deleteAccountAction(
+  _previous: FormState,
+  form: FormData,
+): Promise<FormState> {
+  const user = await requireUser();
+  try {
+    await deleteAccount(
+      user.id,
+      Object.fromEntries(form),
+      clientIdentity(await headers()),
+    );
+  } catch (error) {
+    return errorState(error);
+  }
+  await signOut({ redirect: false });
+  redirect("/login?deleted=1");
 }

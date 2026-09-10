@@ -3,6 +3,7 @@ import { getOwnProfile } from "@/features/profiles/queries";
 import { ProfileForm } from "@/features/profiles/components/profile-form";
 import { MediaUploader } from "@/features/profiles/components/media-uploader";
 import { ResendVerificationButton } from "@/features/auth/components/resend-verification-button";
+import { DeleteAccountForm } from "@/features/auth/components/delete-account-form";
 import Link from "next/link";
 export const metadata = { title: "Impostazioni" };
 export default async function SettingsPage() {
@@ -57,6 +58,9 @@ export default async function SettingsPage() {
               currentUrl={profile.coverUrl}
             />
           </div>
+          <div className="divider" />
+          <h2>Zona pericolosa</h2>
+          <DeleteAccountForm />
         </aside>
       </div>
     </>

@@ -10,6 +10,7 @@ datasource db {
 enum UserStatus {
   ACTIVE
   SUSPENDED
+  DELETED
 }
 
 enum Visibility {

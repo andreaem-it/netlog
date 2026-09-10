@@ -4,7 +4,11 @@ export const metadata = { title: "Accedi" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ registered?: string; reset?: string }>;
+  searchParams: Promise<{
+    registered?: string;
+    reset?: string;
+    deleted?: string;
+  }>;
 }) {
   const params = await searchParams;
   return (
@@ -24,6 +28,11 @@ export default async function LoginPage({
         {params.reset === "1" && (
           <p className="notice" role="status">
             Password aggiornata. Accedi con la nuova password.
+          </p>
+        )}
+        {params.deleted === "1" && (
+          <p className="notice" role="status">
+            Il tuo account è stato eliminato.
           </p>
         )}
         <AuthForm mode="login" />

@@ -12,6 +12,7 @@ import { db } from "@/server/db/client";
 import {
   AccountInputError,
   authenticateAccount,
+  deleteAccount,
   registerAccount,
   resetPassword,
   sendVerificationEmail,
@@ -629,6 +630,32 @@ describe("identity and authorization on PostgreSQL", () => {
     expect(await db.verificationToken.count({ where: { identifier: user.id } })).toBe(
       1,
     );
+  });
+  it("deletes an account, scrubs identifying data, and revokes the session", async () => {
+    const user = await account("giulia");
+    await expect(
+      deleteAccount(user.id, { password: "wrong password entirely" }, "client"),
+    ).rejects.toThrow(AccountInputError);
+    expect(await validateSession(user.id, 0)).not.toBeNull();
+
+    await deleteAccount(user.id, { password }, "client");
+    expect(await validateSession(user.id, 0)).toBeNull();
+    expect(
+      await authenticateAccount(
+        { email: "giulia@example.test", password },
+        "client",
+      ),
+    ).toBeNull();
+    const deleted = await db.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(deleted.status).toBe("DELETED");
+    expect(deleted.passwordHash).toBeNull();
+    expect(deleted.email).not.toBe("giulia@example.test");
+    const profile = await db.profile.findUniqueOrThrow({
+      where: { userId: user.id },
+    });
+    expect(profile.discoverable).toBe(false);
+    expect(profile.visibility).toBe("PRIVATE");
+    expect(profile.avatarId).toBeNull();
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

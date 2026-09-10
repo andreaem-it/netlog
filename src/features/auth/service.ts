@@ -17,6 +17,7 @@ import {
   emailSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  deleteAccountSchema,
 } from "./schemas";
 
 export class AccountInputError extends Error {}
@@ -211,6 +212,54 @@ export async function resetPassword(input: unknown, identity: string) {
     await tx.passwordResetToken.updateMany({
       where: { userId: record.userId, usedAt: null },
       data: { usedAt: new Date() },
+    });
+  });
+}
+
+export async function deleteAccount(
+  userId: string,
+  input: unknown,
+  identity: string,
+) {
+  const { password } = deleteAccountSchema.parse(input);
+  await consumeRateLimit("delete-account", identity, 10, 3600);
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true, status: true },
+  });
+  const valid = await verifyPassword(
+    user?.passwordHash ?? (await getDummyHash()),
+    password,
+  );
+  if (!user?.passwordHash || !valid || user.status !== "ACTIVE")
+    throw new AccountInputError("Password errata.");
+  // Scrub identifying fields so the (unique) email/username can be reused,
+  // and revoke every session; every other check in the app already treats
+  // a non-ACTIVE user as logged-out and invisible, so nothing else needs to
+  // know about deletion. Posts/comments/messages are left as-is on purpose:
+  // they belong to the conversations of people who are still here.
+  await db.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        status: "DELETED",
+        sessionVersion: { increment: 1 },
+        passwordHash: null,
+        email: `deleted-${userId}@deleted.invalid`,
+        name: "Utente eliminato",
+      },
+    });
+    await tx.profile.updateMany({
+      where: { userId },
+      data: {
+        bio: "",
+        city: null,
+        birthDate: null,
+        visibility: "PRIVATE",
+        discoverable: false,
+        avatarId: null,
+        coverId: null,
+      },
     });
   });
 }
