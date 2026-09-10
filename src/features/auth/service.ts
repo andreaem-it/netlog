@@ -16,6 +16,7 @@ import {
   loginSchema,
   emailSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
 } from "./schemas";
 
 export class AccountInputError extends Error {}
@@ -26,8 +27,9 @@ export async function registerAccount(input: unknown, identity: string) {
   const data = registerSchema.parse(input);
   await consumeRateLimit("register", identity, 10, 3600);
   const passwordHash = await hashPassword(data.password);
+  let user: { id: string };
   try {
-    return await db.user.create({
+    user = await db.user.create({
       data: {
         email: data.email,
         name: data.name,
@@ -47,6 +49,60 @@ export async function registerAccount(input: unknown, identity: string) {
     }
     throw error;
   }
+  try {
+    await sendVerificationEmail(user.id, data.email);
+  } catch {
+    // Registration already succeeded; a failed verification email can be
+    // retried later from settings, so it must not fail the whole signup.
+    console.error("registration_verification_email_failed");
+  }
+  return user;
+}
+
+export async function sendVerificationEmail(userId: string, email: string) {
+  const appUrl = getAppUrl();
+  getMailEnv();
+  // Replace any previous pending token so old links stop working.
+  await db.verificationToken.deleteMany({ where: { identifier: userId } });
+  const token = randomBytes(32).toString("hex");
+  await db.verificationToken.create({
+    data: {
+      identifier: userId,
+      token: tokenDigest(token),
+      expires: new Date(Date.now() + 24 * 3_600_000),
+    },
+  });
+  const url = new URL("/verify-email", appUrl);
+  url.searchParams.set("token", token);
+  try {
+    await sendEmail({
+      to: email,
+      subject: `Conferma la tua email · ${brand.name}`,
+      text: `Conferma il tuo indirizzo email entro 24 ore aprendo questo link:\n\n${url.toString()}\n\nSe non hai creato tu questo account, ignora questa email.`,
+    });
+  } catch {
+    console.error("verification_email_delivery_failed");
+  }
+}
+
+export async function verifyEmailToken(input: unknown, identity: string) {
+  const { token } = verifyEmailSchema.parse(input);
+  await consumeRateLimit("verify-email-consume", identity, 20, 900);
+  const tokenHash = tokenDigest(token);
+  // A unique-keyed delete is atomic: a concurrent second attempt on the same
+  // token finds no row and fails, same as an already-used or expired link.
+  let record: { identifier: string; expires: Date };
+  try {
+    record = await db.verificationToken.delete({ where: { token: tokenHash } });
+  } catch {
+    throw new AccountInputError("Link non valido o scaduto.");
+  }
+  if (record.expires < new Date())
+    throw new AccountInputError("Link non valido o scaduto.");
+  await db.user.update({
+    where: { id: record.identifier },
+    data: { emailVerified: new Date() },
+  });
 }
 
 export async function authenticateAccount(input: unknown, identity: string) {

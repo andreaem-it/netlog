@@ -6,12 +6,19 @@ import { AuthError } from "next-auth";
 import { ZodError } from "zod";
 import { ConfigurationError } from "@/config/env";
 import { signIn, signOut } from "@/auth";
-import { clientIdentity, RateLimitError } from "@/server/security/rate-limit";
+import { requireUser } from "@/server/authorization/session";
+import {
+  clientIdentity,
+  consumeRateLimit,
+  RateLimitError,
+} from "@/server/security/rate-limit";
 import {
   AccountInputError,
   registerAccount,
   requestPasswordReset,
   resetPassword,
+  sendVerificationEmail,
+  verifyEmailToken,
 } from "./service";
 import { loginSchema, type FormState } from "./schemas";
 
@@ -133,4 +140,32 @@ export async function resetPasswordAction(
 
 export async function logoutAction() {
   await signOut({ redirectTo: "/login" });
+}
+
+export async function verifyEmailAction(form: FormData) {
+  const token = form.get("token");
+  try {
+    await verifyEmailToken({ token }, clientIdentity(await headers()));
+  } catch {
+    redirect(
+      `/verify-email?token=${encodeURIComponent(String(token ?? ""))}&error=1`,
+    );
+  }
+  redirect("/home?verified=1");
+}
+
+export async function resendVerificationEmailAction(): Promise<FormState> {
+  const user = await requireUser();
+  if (user.emailVerified)
+    return { status: "success", message: "La tua email è già verificata." };
+  try {
+    await consumeRateLimit("verify-email-resend", user.id, 5, 3600);
+    await sendVerificationEmail(user.id, user.email);
+  } catch (error) {
+    return errorState(error);
+  }
+  return {
+    status: "success",
+    message: "Ti abbiamo inviato una nuova email di conferma.",
+  };
 }

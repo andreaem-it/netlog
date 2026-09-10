@@ -4,7 +4,7 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 
 ## Funzionalità disponibili
 
-- Registrazione email/password con username univoco e creazione atomica del profilo.
+- Registrazione email/password con username univoco e creazione atomica del profilo. Invia automaticamente un'email di conferma (token monouso di 24 ore, riemesso a ogni richiesta); l'account resta utilizzabile anche prima della conferma, che si può rifare dalle impostazioni.
 - Login/logout con Auth.js Credentials, password Argon2id e sessioni JWT revocabili.
 - Recupero password con token monouso di 30 minuti, invio email, protezione dai tentativi ripetuti e revoca delle sessioni precedenti.
 - Home personale, profilo pubblico, modifica di nome/bio/città/data di nascita (facoltativa, mai pubblica) e visibilità pubblico/privato.
@@ -149,4 +149,6 @@ Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "so
 6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling.
 7. **Completata:** hardening (header di sicurezza già presenti, verificati), suite E2E automatizzata (`pnpm test:e2e`), misure delle query (indici già coperti, documentati in "Misure delle query"), backup/ripristino (PITR nativo di Neon, documentato) e deploy (già in produzione su Vercel dalle milestone precedenti).
 
-Prima della beta pubblica restano inoltre verifica email, segnalazioni/moderazione, cancellazione account, policy per età/privacy/conservazione, configurazione SMTP/storage e controllo delle dipendenze. Nessun deploy pubblico è stato eseguito.
+Prima della beta pubblica restano inoltre segnalazioni/moderazione, cancellazione account, policy per età/privacy/conservazione, configurazione SMTP effettiva e controllo delle dipendenze. Nessun deploy pubblico è stato eseguito.
+
+**Nota operativa**: la verifica email è implementata a livello di codice (token, pagina `/verify-email`, reinvio dalle impostazioni), ma in produzione **`SMTP_URL` non risulta configurato** (solo `MAIL_TRANSPORT`/`MAIL_FROM` sono presenti nelle env Vercel): finché non viene impostato un provider SMTP reale, l'invio delle email (verifica e anche il recupero password, che ha lo stesso requisito) fallisce silenziosamente lato server — l'utente non riceve alcun errore visibile, semplicemente non arriva l'email. Da configurare prima della beta pubblica.

@@ -2,6 +2,7 @@ import { requireUser } from "@/server/authorization/session";
 import { getOwnProfile } from "@/features/profiles/queries";
 import { ProfileForm } from "@/features/profiles/components/profile-form";
 import { MediaUploader } from "@/features/profiles/components/media-uploader";
+import { ResendVerificationButton } from "@/features/auth/components/resend-verification-button";
 import Link from "next/link";
 export const metadata = { title: "Impostazioni" };
 export default async function SettingsPage() {
@@ -30,6 +31,14 @@ export default async function SettingsPage() {
           <div className="divider" />
           <h2>Il tuo account</h2>
           <p>{user.email}</p>
+          {user.emailVerified ? (
+            <p className="muted">Email verificata.</p>
+          ) : (
+            <>
+              <p className="muted">Email non ancora verificata.</p>
+              <ResendVerificationButton />
+            </>
+          )}
           <Link href="/forgot-password" className="text-link">
             Reimposta la password
           </Link>

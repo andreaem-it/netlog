@@ -52,6 +52,9 @@ export const resetPasswordSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/),
   password: passwordSchema,
 });
+export const verifyEmailSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/),
+});
 function ageInYears(date: Date) {
   return (Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
 }

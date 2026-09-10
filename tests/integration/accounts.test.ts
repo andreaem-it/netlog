@@ -10,10 +10,13 @@ import {
 import { randomBytes, randomUUID } from "node:crypto";
 import { db } from "@/server/db/client";
 import {
+  AccountInputError,
   authenticateAccount,
   registerAccount,
   resetPassword,
+  sendVerificationEmail,
   tokenDigest,
+  verifyEmailToken,
 } from "@/features/auth/service";
 import {
   getOwnProfile,
@@ -570,6 +573,62 @@ describe("identity and authorization on PostgreSQL", () => {
     await expect(
       sendMessage(a.id, "marco", { body: "ancora ciao", clientId: randomUUID() }),
     ).rejects.toThrow(MessageActionError);
+  });
+  it("verifies an email once under concurrency and rejects expired or reused tokens", async () => {
+    const user = await account("giulia");
+    expect(await db.user.findUniqueOrThrow({ where: { id: user.id } })).toMatchObject({
+      emailVerified: null,
+    });
+    const token = randomBytes(32).toString("hex");
+    await db.verificationToken.create({
+      data: {
+        identifier: user.id,
+        token: tokenDigest(token),
+        expires: new Date(Date.now() + 60_000),
+      },
+    });
+    const outcomes = await Promise.allSettled([
+      verifyEmailToken({ token }, "client-a"),
+      verifyEmailToken({ token }, "client-b"),
+    ]);
+    expect(outcomes.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(
+      (await db.user.findUniqueOrThrow({ where: { id: user.id } })).emailVerified,
+    ).not.toBeNull();
+    // The token is single-use: a third attempt with the same value fails.
+    await expect(verifyEmailToken({ token }, "client-c")).rejects.toThrow(
+      AccountInputError,
+    );
+  });
+  it("rejects an expired verification token without verifying the account", async () => {
+    const user = await account("giulia");
+    const token = randomBytes(32).toString("hex");
+    await db.verificationToken.create({
+      data: {
+        identifier: user.id,
+        token: tokenDigest(token),
+        expires: new Date(0),
+      },
+    });
+    await expect(verifyEmailToken({ token }, "client")).rejects.toThrow(
+      AccountInputError,
+    );
+    expect(
+      (await db.user.findUniqueOrThrow({ where: { id: user.id } })).emailVerified,
+    ).toBeNull();
+  });
+  it("replaces a pending verification token when a new one is requested", async () => {
+    const user = await account("giulia");
+    vi.stubEnv("APP_URL", "https://example.test");
+    vi.stubEnv("MAIL_TRANSPORT", "file");
+    await sendVerificationEmail(user.id, "giulia@example.test");
+    expect(await db.verificationToken.count({ where: { identifier: user.id } })).toBe(
+      1,
+    );
+    await sendVerificationEmail(user.id, "giulia@example.test");
+    expect(await db.verificationToken.count({ where: { identifier: user.id } })).toBe(
+      1,
+    );
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

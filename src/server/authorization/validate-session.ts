@@ -12,6 +12,7 @@ export async function validateSession(
       id: true,
       name: true,
       email: true,
+      emailVerified: true,
       profile: {
         select: { username: true, avatar: { select: { storageKey: true } } },
       },
