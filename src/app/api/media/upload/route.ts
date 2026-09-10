@@ -63,6 +63,8 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(jsonResponse);
   } catch (error) {
+    // ponytail: temporary diagnostic, revert once the upload 400 cause is found
+    console.error("media_upload_failed", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Upload fallito." },
       { status: 400 },
