@@ -70,11 +70,20 @@ export async function loginAction(
   if (!parsed.success)
     return { status: "error", message: "Controlla email e password." };
   try {
-    await signIn("credentials", {
+    const result = await signIn("credentials", {
       ...parsed.data,
       redirect: false,
       redirectTo: "/home",
     });
+    // Auth.js can return a callback URL containing `error=` instead of
+    // throwing when credentials are rejected. Surface that outcome in the
+    // form instead of redirecting to a protected page and losing the message.
+    if (typeof result === "string" && result.includes("error="))
+      return {
+        status: "error",
+        message:
+          "Accesso non riuscito. Controlla email e password o attendi qualche minuto prima di riprovare.",
+      };
   } catch (error) {
     if (error instanceof AuthError)
       return {
