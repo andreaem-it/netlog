@@ -19,3 +19,11 @@ export const reportProfileSchema = z.object({
   reason: reportReasonSchema,
   detail: reportDetailSchema,
 });
+
+export const REPORT_REASON_LABEL: Record<string, string> = {
+  SPAM: "Spam",
+  HARASSMENT: "Molestie",
+  HATE_SPEECH: "Incitamento all'odio",
+  NUDITY: "Nudità o contenuto sessuale",
+  OTHER: "Altro",
+};

@@ -67,3 +67,37 @@ export async function reportProfile(reporterId: string, input: unknown) {
     throw error;
   }
 }
+
+// Admin-only moderation actions. Callers must gate access with
+// requireAdmin() before reaching here — these bypass every ownership check.
+export async function resolveReport(reportId: string) {
+  const result = await db.report.updateMany({
+    where: { id: reportId, status: "OPEN" },
+    data: { status: "RESOLVED" },
+  });
+  if (result.count === 0)
+    throw new ReportActionError("Segnalazione non trovata o già risolta.");
+}
+
+export async function moderationDeletePost(postId: string) {
+  const result = await db.post.deleteMany({ where: { id: postId } });
+  if (result.count === 0)
+    throw new ReportActionError("Post non trovato.");
+  await db.report.updateMany({
+    where: { postId, status: "OPEN" },
+    data: { status: "RESOLVED" },
+  });
+}
+
+export async function moderationSuspendUser(userId: string) {
+  const result = await db.user.updateMany({
+    where: { id: userId, status: "ACTIVE" },
+    data: { status: "SUSPENDED", sessionVersion: { increment: 1 } },
+  });
+  if (result.count === 0)
+    throw new ReportActionError("Utente non trovato o già sospeso.");
+  await db.report.updateMany({
+    where: { reportedUserId: userId, status: "OPEN" },
+    data: { status: "RESOLVED" },
+  });
+}

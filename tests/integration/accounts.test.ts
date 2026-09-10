@@ -33,7 +33,15 @@ import {
   toggleLike,
 } from "@/features/posts/service";
 import { getFeed, getComments } from "@/features/posts/queries";
-import { ReportActionError, reportPost, reportProfile } from "@/features/reports/service";
+import {
+  ReportActionError,
+  reportPost,
+  reportProfile,
+  resolveReport,
+  moderationDeletePost,
+  moderationSuspendUser,
+} from "@/features/reports/service";
+import { listOpenReports } from "@/features/reports/queries";
 import { getUnreadNotificationCount, listNotifications } from "@/features/notifications/queries";
 import { markAllNotificationsRead } from "@/features/notifications/service";
 import { recordProfileView } from "@/features/visits/service";
@@ -692,6 +700,44 @@ describe("identity and authorization on PostgreSQL", () => {
     expect(
       await db.report.count({ where: { reportedUserId: target.id } }),
     ).toBe(1);
+  });
+  it("resolves a report and rejects resolving it twice", async () => {
+    const author = await account("giulia");
+    const reporter = await account("marco");
+    const post = await createPost(author.id, { body: "ciao", visibility: "PUBLIC" });
+    await reportPost(reporter.id, { postId: post.id, reason: "SPAM", detail: "" });
+    const [report] = await listOpenReports();
+    await resolveReport(report!.id);
+    await expect(resolveReport(report!.id)).rejects.toThrow(ReportActionError);
+    expect(await db.report.count({ where: { status: "OPEN" } })).toBe(0);
+  });
+  it("moderation-deletes a reported post and resolves its reports", async () => {
+    const author = await account("giulia");
+    const reporter = await account("marco");
+    const post = await createPost(author.id, { body: "spam spam", visibility: "PUBLIC" });
+    await reportPost(reporter.id, { postId: post.id, reason: "SPAM", detail: "" });
+    await moderationDeletePost(post.id);
+    expect(await db.post.findUnique({ where: { id: post.id } })).toBeNull();
+    expect(await db.report.count({ where: { status: "OPEN" } })).toBe(0);
+    await expect(moderationDeletePost(post.id)).rejects.toThrow(ReportActionError);
+  });
+  it("moderation-suspends a reported user, revoking their session", async () => {
+    const target = await account("giulia");
+    const reporter = await account("marco");
+    await reportProfile(reporter.id, {
+      username: "giulia",
+      reason: "HARASSMENT",
+      detail: "",
+    });
+    await moderationSuspendUser(target.id);
+    expect(await validateSession(target.id, 0)).toBeNull();
+    expect(
+      (await db.user.findUniqueOrThrow({ where: { id: target.id } })).status,
+    ).toBe("SUSPENDED");
+    expect(await db.report.count({ where: { status: "OPEN" } })).toBe(0);
+    await expect(moderationSuspendUser(target.id)).rejects.toThrow(
+      ReportActionError,
+    );
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

@@ -1,9 +1,17 @@
 "use server";
 
 import { ZodError } from "zod";
-import { requireUser } from "@/server/authorization/session";
+import { revalidatePath } from "next/cache";
+import { requireUser, requireAdmin } from "@/server/authorization/session";
 import { RateLimitError } from "@/server/security/rate-limit";
-import { reportPost, reportProfile, ReportActionError } from "./service";
+import {
+  reportPost,
+  reportProfile,
+  resolveReport,
+  moderationDeletePost,
+  moderationSuspendUser,
+  ReportActionError,
+} from "./service";
 import type { FormState } from "@/features/auth/schemas";
 
 function errorState(error: unknown): FormState {
@@ -32,6 +40,27 @@ export async function reportPostAction(
     status: "success",
     message: "Segnalazione inviata. Grazie per la tua attenzione.",
   };
+}
+
+export async function resolveReportAction(form: FormData) {
+  await requireAdmin();
+  const reportId = String(form.get("reportId") ?? "");
+  await resolveReport(reportId).catch(() => {});
+  revalidatePath("/moderazione");
+}
+
+export async function moderationDeletePostAction(form: FormData) {
+  await requireAdmin();
+  const postId = String(form.get("postId") ?? "");
+  await moderationDeletePost(postId).catch(() => {});
+  revalidatePath("/moderazione");
+}
+
+export async function moderationSuspendUserAction(form: FormData) {
+  await requireAdmin();
+  const userId = String(form.get("userId") ?? "");
+  await moderationSuspendUser(userId).catch(() => {});
+  revalidatePath("/moderazione");
 }
 
 export async function reportProfileAction(

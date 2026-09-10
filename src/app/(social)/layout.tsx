@@ -1,4 +1,5 @@
 import { requireUser } from "@/server/authorization/session";
+import { getAdminEmails } from "@/config/env";
 import { AppShell } from "@/components/layout/app-shell";
 export default async function SocialLayout({
   children,
@@ -13,6 +14,7 @@ export default async function SocialLayout({
         username: user.profile?.username ?? "",
         avatarUrl: user.profile?.avatar?.storageKey ?? null,
       }}
+      isAdmin={getAdminEmails().has(user.email.toLowerCase())}
     >
       {children}
     </AppShell>

@@ -7,9 +7,11 @@ import { logoutAction } from "@/features/auth/actions";
 
 export function AppShell({
   user,
+  isAdmin,
   children,
 }: {
   user: { name: string; username: string; avatarUrl?: string | null };
+  isAdmin?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -32,7 +34,7 @@ export function AppShell({
       </header>
       <div className="app-grid">
         <aside className="sidebar">
-          <Navigation username={user.username} />
+          <Navigation username={user.username} isAdmin={isAdmin} />
           <div className="sidebar-note">
             <strong>Un piccolo nuovo inizio.</strong>Uno spazio che cresce,
             <br />

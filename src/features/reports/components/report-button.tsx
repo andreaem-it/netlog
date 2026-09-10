@@ -2,15 +2,8 @@
 import { useActionState, useState } from "react";
 import { Flag } from "lucide-react";
 import { reportPostAction, reportProfileAction } from "../actions";
+import { REPORT_REASON_LABEL } from "../schemas";
 import { initialFormState } from "@/features/auth/schemas";
-
-const REASON_LABEL: Record<string, string> = {
-  SPAM: "Spam",
-  HARASSMENT: "Molestie",
-  HATE_SPEECH: "Incitamento all'odio",
-  NUDITY: "Nudità o contenuto sessuale",
-  OTHER: "Altro",
-};
 
 export function ReportButton(
   props: { target: "post"; postId: string } | { target: "profile"; username: string },
@@ -52,7 +45,7 @@ export function ReportButton(
       <label>
         Motivo della segnalazione
         <select name="reason" defaultValue="SPAM">
-          {Object.entries(REASON_LABEL).map(([value, label]) => (
+          {Object.entries(REPORT_REASON_LABEL).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>

@@ -94,3 +94,15 @@ export function getMailEnv() {
     throw new ConfigurationError(["SMTP_URL"]);
   return env;
 }
+
+// ponytail: a plain email allowlist is enough moderation access control for
+// this stage — no admin role/permissions system exists yet, and one row of
+// config beats a users.is_admin column with nobody able to set it in prod.
+export function getAdminEmails() {
+  return new Set(
+    (clean(process.env.ADMIN_EMAILS) ?? "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}

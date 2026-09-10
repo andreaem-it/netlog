@@ -9,9 +9,16 @@ import {
   Bell,
   UserRound,
   Settings2,
+  ShieldAlert,
 } from "lucide-react";
 
-export function Navigation({ username }: { username: string }) {
+export function Navigation({
+  username,
+  isAdmin,
+}: {
+  username: string;
+  isAdmin?: boolean;
+}) {
   const path = usePathname();
   return (
     <nav aria-label="Navigazione principale">
@@ -23,6 +30,9 @@ export function Navigation({ username }: { username: string }) {
         { label: "Notifiche", href: "/notifiche", icon: Bell },
         { label: "Il mio profilo", href: `/u/${username}`, icon: UserRound },
         { label: "Impostazioni", href: "/settings", icon: Settings2 },
+        ...(isAdmin
+          ? [{ label: "Moderazione", href: "/moderazione", icon: ShieldAlert }]
+          : []),
       ].map(({ label, href, icon: Icon }) =>
         href ? (
           <Link
