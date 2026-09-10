@@ -119,6 +119,26 @@ Le migrazioni contengono anche vincoli CHECK, un indice parziale sulle richieste
 
 `pnpm db:cleanup` rimuove token, sessioni database e contatori scaduti. Programmare questo comando prima del rilascio; non è stato creato alcun job sul sistema dell'utente.
 
+## Backup e ripristino
+
+Il database di produzione è Neon (PostgreSQL gestito). Neon esegue backup continui e offre point-in-time recovery (PITR) nativo: non è stato creato alcun job di backup applicativo, per evitare di duplicare una funzionalità già coperta dalla piattaforma. In caso di ripristino:
+
+1. Dalla dashboard Neon, creare un branch dal punto nel tempo desiderato (entro la finestra di retention del piano attivo) invece di ripristinare in-place sul branch di produzione.
+2. Verificare i dati sul branch temporaneo prima di promuoverlo o di ripuntare `DATABASE_URL` su di esso.
+3. Aggiornare `DATABASE_URL` nelle env Vercel solo dopo la verifica, poi ridistribuire.
+
+La finestra di retention dipende dal piano Neon attivo: verificarla nella dashboard prima di assumere una copertura specifica in giorni.
+
+## Misure delle query
+
+Le query più calde (feed cronologico, ricerca profili, conversazioni, notifiche) sono già coperte da indici compositi dedicati nello schema Prisma (es. `Post` su `[authorId, createdAt desc, id desc]`, `Notification` su `[recipientId, createdAt desc, id desc]`, `Message` su `[conversationId, createdAt desc, id desc]`). Con i volumi attuali (ambiente demo/collaudo, decine di righe) un `EXPLAIN ANALYZE` non produce numeri significativi: non sono stati aggiunti indici aggiuntivi in modo speculativo.
+
+Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "solo amici" e ordina globalmente per `createdAt`, quindi l'indice su `authorId` non copre da solo il ramo `PUBLIC`. Se in produzione `EXPLAIN ANALYZE` su `getFeed` mostrasse un seq scan con volumi reali, il primo intervento da valutare è un indice su `Post([visibility, createdAt(sort: Desc), id(sort: Desc)])`.
+
+## Suite E2E
+
+`pnpm test:e2e` avvia un PostgreSQL temporaneo (stesso meccanismo di `pnpm test:integration`), applica le migrazioni, avvia l'app su una porta libera e lancia Playwright (Chromium) contro il percorso critico: registrazione, login, modifica profilo, creazione post, like, logout e nuovo login. Richiede `npx playwright install chromium` la prima volta. Il browser Playwright non è installato automaticamente da `pnpm install`.
+
 ## Prossime milestone
 
 1. **Completata:** fondazioni, identità, reset password, profilo base, seed e primi test.

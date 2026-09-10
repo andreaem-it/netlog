@@ -70,6 +70,7 @@ export async function PostCard({
           <button
             className={`button${post.likedByViewer ? " button-primary" : ""}`}
             type="submit"
+            aria-label={post.likedByViewer ? "Rimuovi mi piace" : "Metti mi piace"}
           >
             <Heart size={15} />
             {post.likeCount}

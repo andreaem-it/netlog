@@ -15,6 +15,7 @@
     "typecheck": "prisma generate && next typegen && tsc --noEmit",
     "test": "vitest run --project unit",
     "test:integration": "tsx scripts/integration.ts",
+    "test:e2e": "tsx scripts/e2e.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -39,6 +40,7 @@
     "zod": "^4.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22.0.0",
     "@types/nodemailer": "^8.0.1",
