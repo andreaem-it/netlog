@@ -46,3 +46,4 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 - 2026-09-10 — Codex: creato questo file e registrato il fix login locale non ancora pushato.
 - 2026-09-10 — Claude: verificato lint/typecheck e committato il fix login (`error=` in callback URL gestito senza redirect silenzioso).
 - 2026-09-10 — Claude: tentata verifica login su `https://netlog-phi.vercel.app` con `curl`. `GET /api/auth/csrf` ritorna `{"message":"There was a problem with the server configuration..."}` — stesso blocco P0 della migrazione Neon segnalato da Codex. Login non testabile finché quello non è risolto.
+- 2026-09-10 — Claude: confermato anche via browser con credenziali di test fornite dal proprietario (`andrea.test@example.test`). Il form non mostra errore ma il network mostra `POST /login` → `503`. Conferma che il blocco è lato server (Neon/env), non nel client o nel fix di `actions.ts`.
