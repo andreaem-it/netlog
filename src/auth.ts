@@ -42,8 +42,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   logger: {
-    error() {
-      console.error("authentication_failed");
+    error(error) {
+      // ponytail: temporary diagnostic, revert once the Neon 503 root cause is confirmed
+      console.error("authentication_failed", error.name, error.message, error.cause);
     },
   },
 });
