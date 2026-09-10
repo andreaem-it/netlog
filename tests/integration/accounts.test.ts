@@ -22,6 +22,14 @@ import {
 } from "@/features/profiles/queries";
 import { applyProfileMedia, updateOwnProfile } from "@/features/profiles/service";
 import {
+  addComment,
+  createPost,
+  deleteComment,
+  deletePost,
+  toggleLike,
+} from "@/features/posts/service";
+import { getFeed, getComments } from "@/features/posts/queries";
+import {
   blockUser,
   cancelFriendRequest,
   removeFriendship,
@@ -401,6 +409,55 @@ describe("identity and authorization on PostgreSQL", () => {
     await removeFriendship(b.id, "giulia");
     expect(await db.friendship.count()).toBe(0);
     expect(await getRelationship(a.id, "marco")).toEqual({ kind: "none" });
+  });
+  it("shows public and friends-only posts by rule, hides private and blocked authors", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    await createPost(a.id, { body: "pubblico", visibility: "PUBLIC" });
+    await createPost(a.id, { body: "solo amici", visibility: "FRIENDS" });
+    await createPost(a.id, { body: "privato", visibility: "PRIVATE" });
+    const strangerFeed = await getFeed(b.id);
+    expect(strangerFeed.posts.map((p) => p.body)).toEqual(["pubblico"]);
+
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    const friendFeed = await getFeed(b.id);
+    expect(friendFeed.posts.map((p) => p.body).sort()).toEqual([
+      "pubblico",
+      "solo amici",
+    ]);
+
+    await db.block.create({ data: { blockerId: c.id, blockedId: a.id } });
+    const blockedFeed = await getFeed(c.id);
+    expect(blockedFeed.posts).toEqual([]);
+  });
+  it("toggles likes idempotently and manages comments with ownership checks", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const post = await createPost(a.id, { body: "ciao", visibility: "PUBLIC" });
+    expect(await toggleLike(b.id, post.id)).toEqual({ liked: true });
+    expect(await toggleLike(b.id, post.id)).toEqual({ liked: false });
+    const comment = await addComment(b.id, post.id, { body: "bel post" });
+    expect(await getComments(post.id)).toMatchObject([{ body: "bel post" }]);
+    await expect(deleteComment(a.id, comment.id)).rejects.toThrow();
+    await deleteComment(b.id, comment.id);
+    expect(await getComments(post.id)).toEqual([]);
+  });
+  it("blocks a stranger from liking or commenting on a friends-only post, and deleting removes it from the feed", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const post = await createPost(a.id, {
+      body: "solo amici",
+      visibility: "FRIENDS",
+    });
+    await expect(toggleLike(b.id, post.id)).rejects.toThrow();
+    await expect(
+      addComment(b.id, post.id, { body: "ciao" }),
+    ).rejects.toThrow();
+    await deletePost(a.id, post.id);
+    expect((await getFeed(a.id)).posts).toEqual([]);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

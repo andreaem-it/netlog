@@ -9,12 +9,16 @@ import {
 import { requireUser } from "@/server/authorization/session";
 import { getProfile } from "@/features/profiles/queries";
 import { ProfileCard } from "@/features/profiles/components/profile-card";
+import { getFeed } from "@/features/posts/queries";
+import { PostComposer } from "@/features/posts/components/post-composer";
+import { PostCard } from "@/features/posts/components/post-card";
 
 export const metadata = { title: "Il tuo spazio" };
 export default async function HomePage() {
   const user = await requireUser();
   const profile = await getProfile(user.profile?.username ?? "", user.id);
   if (!profile) throw new Error("Profile missing for active account.");
+  const { posts } = await getFeed(user.id);
   return (
     <>
       <div className="page-title">
@@ -31,25 +35,34 @@ export default async function HomePage() {
       <div className="content-columns">
         <div className="stack">
           <ProfileCard profile={profile} />
-          <section className="card">
-            <div
-              className="card-body section-heading"
-              style={{ marginBottom: 0, paddingBottom: 0 }}
-            >
-              <h2>Dalle tue persone</h2>
-              <span className="pill">In ordine di tempo</span>
-            </div>
-            <div className="empty-state">
-              <span className="empty-icon">
-                <MessageSquare size={23} />
-              </span>
-              <h2>Le storie belle hanno un inizio.</h2>
-              <p>
-                Qui troverai i post dei tuoi amici. La condivisione e le
-                amicizie saranno disponibili presto.
-              </p>
-            </div>
+          <section className="card card-body">
+            <PostComposer />
           </section>
+          <div
+            className="section-heading"
+            style={{ marginBottom: 0 }}
+          >
+            <h2>Dalle tue persone</h2>
+            <span className="pill">In ordine di tempo</span>
+          </div>
+          {posts.length === 0 ? (
+            <section className="card">
+              <div className="empty-state">
+                <span className="empty-icon">
+                  <MessageSquare size={23} />
+                </span>
+                <h2>Le storie belle hanno un inizio.</h2>
+                <p>
+                  Qui troverai i tuoi post e quelli dei tuoi amici. Scrivi il
+                  primo qui sopra.
+                </p>
+              </div>
+            </section>
+          ) : (
+            posts.map((post) => (
+              <PostCard key={post.id} post={post} viewerId={user.id} />
+            ))
+          )}
         </div>
         <aside className="stack">
           <section className="card welcome-card">
