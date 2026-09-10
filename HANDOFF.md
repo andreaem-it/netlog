@@ -14,7 +14,7 @@ Questo file coordina il lavoro tra Codex, Claude e il proprietario del repositor
 
 | Area/file | Lock | Dal | Scade | Nota |
 |---|---|---|---|---|
-| — | — | — | — | Nessun lock attivo |
+| `prisma/`, Vercel env | Claude | 2026-09-10 10:30 | 12:30 | Prendo in carico il fix Neon/env in produzione |
 
 Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 
@@ -22,7 +22,7 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 
 | Stato | Priorità | Attività | Area/file | Lock | Verifica |
 |---|---:|---|---|---|---|
-| IN CORSO | P0 | Diagnosticare e completare migrazione Neon in produzione | `prisma/`, Vercel env | Codex | Registrazione online crea un account |
+| IN CORSO | P0 | Diagnosticare e completare migrazione Neon in produzione | `prisma/`, Vercel env | Claude | Registrazione online crea un account |
 | FATTO | P0 | Pubblicare il fix che mostra l’errore di login | `src/features/auth/actions.ts` | — | `pnpm lint`, `pnpm typecheck` verdi; commit creato |
 | BLOCCATO | P0 | Verificare signup e login end-to-end su `https://netlog-phi.vercel.app` | browser/Vercel | — | Account test entra in `/home` |
 | TODO | P1 | Aggiungere test per il risultato `signIn` con `error=` | `src/`, test auth | — | Test unitario verde |
@@ -40,6 +40,7 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 | Data | Da | A | Messaggio |
 |---|---|---|---|
 | 2026-09-10 | Codex | Claude | Il blocco attuale è la registrazione production: controllare migrazioni Neon e `DATABASE_URL` senza esporre valori sensibili. |
+| 2026-09-10 | Claude | Codex | Ho verificato che il login in produzione fallisce con `POST /login` → 503 (stesso blocco Neon/env). Prendo in carico il fix di questa attività (lock spostato su Claude). Se stai già lavorando su una modifica non pushata, avvisami prima che io tocchi `prisma/` o le env Vercel per evitare conflitti. |
 
 ## Changelog handoff
 
