@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/server/db/client";
 import { canReadProfile, orderedPair } from "@/features/profiles/policy";
+import { createNotification } from "@/features/notifications/service";
 import { postSchema, commentSchema } from "./schemas";
 
 export class PostActionError extends Error {}
@@ -70,6 +71,12 @@ export async function toggleLike(actorId: string, postId: string) {
   await db.like
     .create({ data: { userId: actorId, postId } })
     .catch(() => {});
+  await createNotification({
+    recipientId: post.authorId,
+    actorId,
+    type: "POST_LIKE",
+    postId,
+  });
   return { liked: true };
 }
 
@@ -81,10 +88,18 @@ export async function addComment(actorId: string, postId: string, input: unknown
   });
   if (!post || !(await canViewPost(actorId, post)))
     throw new PostActionError("Questo post non è più disponibile.");
-  return db.comment.create({
+  const comment = await db.comment.create({
     data: { postId, authorId: actorId, body: data.body },
     select: { id: true },
   });
+  await createNotification({
+    recipientId: post.authorId,
+    actorId,
+    type: "POST_COMMENT",
+    postId,
+    commentId: comment.id,
+  });
+  return comment;
 }
 
 export async function deleteComment(actorId: string, commentId: string) {

@@ -4,6 +4,8 @@ import { currentUser } from "@/server/authorization/session";
 import { getProfile } from "@/features/profiles/queries";
 import { ProfileCard } from "@/features/profiles/components/profile-card";
 import { FriendshipActions } from "@/features/friends/components/friendship-actions";
+import { recordProfileView } from "@/features/visits/service";
+import { listVisitors } from "@/features/visits/queries";
 import { AppShell } from "@/components/layout/app-shell";
 import { Brand } from "@/components/ui/brand";
 export const metadata = { title: "Profilo" };
@@ -16,6 +18,9 @@ export default async function ProfilePage({
   const user = await currentUser();
   const profile = await getProfile(username, user?.id);
   if (!profile) notFound();
+  if (user && !profile.owner)
+    await recordProfileView(user.id, profile.username);
+  const visitors = profile.owner ? await listVisitors(user!.id) : [];
   const content = (
     <>
       <div className="page-title">
@@ -29,6 +34,16 @@ export default async function ProfilePage({
       <ProfileCard profile={profile} />
       {user && !profile.owner && (
         <FriendshipActions viewerId={user.id} username={profile.username} />
+      )}
+      {visitors.length > 0 && (
+        <section className="card card-body stack">
+          <h2>Chi ti ha visitato di recente</h2>
+          {visitors.map((visitor) => (
+            <Link key={visitor.username} href={`/u/${visitor.username}`}>
+              {visitor.name} · @{visitor.username}
+            </Link>
+          ))}
+        </section>
       )}
     </>
   );

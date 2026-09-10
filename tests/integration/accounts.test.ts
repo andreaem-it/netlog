@@ -29,6 +29,10 @@ import {
   toggleLike,
 } from "@/features/posts/service";
 import { getFeed, getComments } from "@/features/posts/queries";
+import { getUnreadNotificationCount, listNotifications } from "@/features/notifications/queries";
+import { markAllNotificationsRead } from "@/features/notifications/service";
+import { recordProfileView } from "@/features/visits/service";
+import { listVisitors } from "@/features/visits/queries";
 import {
   blockUser,
   cancelFriendRequest,
@@ -458,6 +462,52 @@ describe("identity and authorization on PostgreSQL", () => {
     ).rejects.toThrow();
     await deletePost(a.id, post.id);
     expect((await getFeed(a.id)).posts).toEqual([]);
+  });
+  it("notifies on friend requests, acceptance, likes and comments", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    expect(await getUnreadNotificationCount(b.id)).toBe(1);
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    expect(await getUnreadNotificationCount(a.id)).toBe(1);
+
+    const post = await createPost(a.id, { body: "ciao", visibility: "PUBLIC" });
+    await toggleLike(b.id, post.id);
+    await addComment(b.id, post.id, { body: "bel post" });
+    const { notifications } = await listNotifications(a.id);
+    expect(notifications.map((n) => n.type).sort()).toEqual(
+      ["FRIEND_ACCEPTED", "POST_COMMENT", "POST_LIKE"].sort(),
+    );
+    expect(await getUnreadNotificationCount(a.id)).toBe(3);
+    await markAllNotificationsRead(a.id);
+    expect(await getUnreadNotificationCount(a.id)).toBe(0);
+  });
+  it("never notifies yourself for your own actions", async () => {
+    const a = await account("giulia");
+    const post = await createPost(a.id, { body: "ciao", visibility: "PUBLIC" });
+    await toggleLike(a.id, post.id);
+    expect(await getUnreadNotificationCount(a.id)).toBe(0);
+  });
+  it("records profile visits only with consent, dedupes within the rolling window, and hides visitors without consent", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await recordProfileView(b.id, "giulia");
+    expect(await listVisitors(a.id)).toEqual([]);
+
+    await updateOwnProfile(a, {
+      name: "giulia",
+      bio: "",
+      city: "",
+      visibility: "PUBLIC",
+      recordVisits: "on",
+      showVisitors: "on",
+      notifyVisits: "on",
+    });
+    await recordProfileView(b.id, "giulia");
+    await recordProfileView(b.id, "giulia");
+    expect(await listVisitors(a.id)).toMatchObject([{ username: "marco" }]);
+    expect(await getUnreadNotificationCount(a.id)).toBe(1);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

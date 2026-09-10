@@ -12,6 +12,9 @@ export function ProfileForm({
     city: string | null;
     birthDate: Date | null;
     visibility: string;
+    recordVisits: boolean;
+    showVisitors: boolean;
+    notifyVisits: boolean;
   };
 }) {
   const [state, action, pending] = useActionState(
@@ -27,6 +30,9 @@ export function ProfileForm({
     profile.birthDate ? profile.birthDate.toISOString().slice(0, 10) : "",
   );
   const [visibility, setVisibility] = useState(profile.visibility);
+  const [recordVisits, setRecordVisits] = useState(profile.recordVisits);
+  const [showVisitors, setShowVisitors] = useState(profile.showVisitors);
+  const [notifyVisits, setNotifyVisits] = useState(profile.notifyVisits);
   return (
     <form action={action} className="form-stack">
       <label>
@@ -88,6 +94,37 @@ export function ProfileForm({
           La tua email non viene mai mostrata nel profilo.
         </span>
       </label>
+      <label>
+        <input
+          type="checkbox"
+          name="recordVisits"
+          checked={recordVisits}
+          onChange={(event) => setRecordVisits(event.target.checked)}
+        />{" "}
+        Registra chi visita il mio profilo
+      </label>
+      {recordVisits && (
+        <>
+          <label>
+            <input
+              type="checkbox"
+              name="showVisitors"
+              checked={showVisitors}
+              onChange={(event) => setShowVisitors(event.target.checked)}
+            />{" "}
+            Mostrami chi mi ha visitato (ultimi 30 giorni)
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="notifyVisits"
+              checked={notifyVisits}
+              onChange={(event) => setNotifyVisits(event.target.checked)}
+            />{" "}
+            Avvisami quando qualcuno visita il mio profilo
+          </label>
+        </>
+      )}
       {state.message && (
         <p
           className={`form-message ${state.status}`}

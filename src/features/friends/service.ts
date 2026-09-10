@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db/client";
 import { orderedPair } from "@/features/profiles/policy";
+import { createNotification } from "@/features/notifications/service";
 
 export class FriendActionError extends Error {}
 
@@ -37,8 +38,9 @@ export async function sendFriendRequest(actorId: string, targetUsername: string)
     throw new FriendActionError("Non puoi inviare una richiesta a te stesso.");
   if (await isBlocked(actorId, target.id))
     throw new FriendActionError("Non puoi inviare una richiesta a questo utente.");
+  let result: { status: "friends" | "pending"; requestId: string };
   try {
-    return await db.$transaction(async (tx) => {
+    result = await db.$transaction(async (tx) => {
       const reverse = await tx.friendRequest.findFirst({
         where: { senderId: target.id, recipientId: actorId, status: "PENDING" },
         select: { id: true },
@@ -55,12 +57,13 @@ export async function sendFriendRequest(actorId: string, targetUsername: string)
             "Avete già una richiesta o un'amicizia in corso.",
           );
         await tx.friendship.create({ data: orderedPair(actorId, target.id) });
-        return { status: "friends" as const };
+        return { status: "friends" as const, requestId: reverse.id };
       }
-      await tx.friendRequest.create({
+      const created = await tx.friendRequest.create({
         data: { senderId: actorId, recipientId: target.id },
+        select: { id: true },
       });
-      return { status: "pending" as const };
+      return { status: "pending" as const, requestId: created.id };
     });
   } catch (error) {
     if (
@@ -70,6 +73,23 @@ export async function sendFriendRequest(actorId: string, targetUsername: string)
       throw new FriendActionError("Avete già una richiesta o un'amicizia in corso.");
     throw error;
   }
+  if (result.status === "pending")
+    await createNotification({
+      recipientId: target.id,
+      actorId,
+      type: "FRIEND_REQUEST",
+      friendRequestId: result.requestId,
+      dedupeKey: `friend_request:${result.requestId}`,
+    });
+  else
+    await createNotification({
+      recipientId: target.id,
+      actorId,
+      type: "FRIEND_ACCEPTED",
+      friendRequestId: result.requestId,
+      dedupeKey: `friend_accepted:${result.requestId}`,
+    });
+  return { status: result.status };
 }
 
 export async function respondToFriendRequest(
@@ -77,7 +97,7 @@ export async function respondToFriendRequest(
   requestId: string,
   accept: boolean,
 ) {
-  await db.$transaction(async (tx) => {
+  const senderId = await db.$transaction(async (tx) => {
     // Atomic status-guarded update: a concurrent duplicate submit for the
     // same request finds 0 rows here (status no longer PENDING) and bails
     // out before ever attempting to create the friendship.
@@ -90,15 +110,23 @@ export async function respondToFriendRequest(
     });
     if (updated.count === 0)
       throw new FriendActionError("Questa richiesta non è più disponibile.");
-    if (accept) {
-      const request = await tx.friendRequest.findUniqueOrThrow({
-        where: { id: requestId },
-      });
-      await tx.friendship.create({
-        data: orderedPair(request.senderId, request.recipientId),
-      });
-    }
+    if (!accept) return null;
+    const request = await tx.friendRequest.findUniqueOrThrow({
+      where: { id: requestId },
+    });
+    await tx.friendship.create({
+      data: orderedPair(request.senderId, request.recipientId),
+    });
+    return request.senderId;
   });
+  if (senderId)
+    await createNotification({
+      recipientId: senderId,
+      actorId,
+      type: "FRIEND_ACCEPTED",
+      friendRequestId: requestId,
+      dedupeKey: `friend_accepted:${requestId}`,
+    });
 }
 
 export async function cancelFriendRequest(actorId: string, requestId: string) {

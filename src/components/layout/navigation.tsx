@@ -20,7 +20,7 @@ export function Navigation({ username }: { username: string }) {
         { label: "Persone", href: "/persone", icon: Users },
         { label: "Amici", href: "/amici", icon: HeartHandshake },
         { label: "Messaggi", icon: MessageCircle },
-        { label: "Notifiche", icon: Bell },
+        { label: "Notifiche", href: "/notifiche", icon: Bell },
         { label: "Il mio profilo", href: `/u/${username}`, icon: UserRound },
         { label: "Impostazioni", href: "/settings", icon: Settings2 },
       ].map(({ label, href, icon: Icon }) =>

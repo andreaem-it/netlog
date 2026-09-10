@@ -79,6 +79,11 @@ export const birthDateSchema = z
     "Data di nascita non valida.",
   );
 
+const checkboxSchema = z
+  .string()
+  .optional()
+  .transform((value) => value === "on");
+
 export const editProfileSchema = z.object({
   name: nameSchema,
   bio: z
@@ -88,6 +93,9 @@ export const editProfileSchema = z.object({
   city: z.string().trim().max(80),
   birthDate: birthDateSchema,
   visibility: z.enum(["PUBLIC", "PRIVATE"]),
+  recordVisits: checkboxSchema,
+  showVisitors: checkboxSchema,
+  notifyVisits: checkboxSchema,
 });
 
 export type FormState = {
