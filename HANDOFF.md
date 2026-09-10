@@ -14,7 +14,7 @@ Questo file coordina il lavoro tra Codex, Claude e il proprietario del repositor
 
 | Area/file | Lock | Dal | Scade | Nota |
 |---|---|---|---|---|
-| — | — | — | — | Nessun lock attivo |
+| Milestone 7 (hardening, E2E, query, backup, deploy) | Claude | 2026-09-10 13:56 | 18:00 | In corso |
 
 Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 
