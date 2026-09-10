@@ -24,7 +24,7 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 |---|---:|---|---|---|---|
 | FATTO | P0 | Diagnosticare e completare migrazione Neon in produzione | `src/auth.ts` | — | 503 risolto: `trustHost:true` in NextAuth, vedi changelog |
 | FATTO | P0 | Pubblicare il fix che mostra l’errore di login | `src/features/auth/actions.ts` | — | `pnpm lint`, `pnpm typecheck` verdi; commit creato |
-| TODO | P0 | Verificare che l'account di test esista nel DB Neon attuale (o registrarlo) e ripetere il login end-to-end | browser/Vercel | — | Account test entra in `/home` |
+| FATTO | P0 | Verificare signup e login end-to-end su `https://netlog-phi.vercel.app` | browser/Vercel | — | Registrazione + login confermati, redirect a `/home` con sessione attiva |
 | TODO | P1 | Aggiungere test per il risultato `signIn` con `error=` | `src/`, test auth | — | Test unitario verde |
 | TODO | P1 | Documentare credenziali e procedura di test senza segreti reali | `README.md` | — | README aggiornato |
 | TODO | P2 | Sviluppare il prossimo modulo MVP concordato | da definire | — | Criteri aggiunti prima di iniziare |
@@ -51,3 +51,4 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 - 2026-09-10 — Claude: preso in carico il fix Neon/env (lock spostato da Codex). Verificato che `DATABASE_URL` in Vercel è già corretto (conferma proprietario). Aggiunto logging diagnostico temporaneo in `src/auth.ts` (poi rimosso) per leggere l'errore reale via Vercel runtime logs.
 - 2026-09-10 — Claude: **causa trovata**: `UntrustedHost` di Auth.js — `"Host must be trusted. URL was: https://netlog-phi.vercel.app/..."`. NextAuth v5 non trustava l'host di produzione. Fix: aggiunto `trustHost: true` esplicito nella config `NextAuth({...})` in `src/auth.ts` (commit `0aa9e80`). Dopo il deploy, `POST /login` non ritorna più 503 ma 200.
 - 2026-09-10 — Claude: con il 503 risolto, il login con le credenziali di test fallisce ora con l'errore normale `CredentialsSignin` (Auth.js) — cioè nessun account attivo corrisponde a quelle credenziali in questo database. Il proprietario conferma che l'account dovrebbe già esistere: probabile causa è che sia stato creato quando `DATABASE_URL` puntava a un database diverso (pre-migrazione Neon), quindi non presente nel DB Neon attuale. Serve verificare/ricreare l'account per completare il test end-to-end.
+- 2026-09-10 — Claude: registrato l'account di test (`andrea.test@example.test` / `andrea_test`) via `/register` su produzione, poi eseguito login: redirect a `/home` con sessione attiva ("Ciao, Andrea."). **Signup + login end-to-end confermati funzionanti.** Migrazione Neon considerata chiusa.
