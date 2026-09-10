@@ -33,6 +33,7 @@ import {
   toggleLike,
 } from "@/features/posts/service";
 import { getFeed, getComments } from "@/features/posts/queries";
+import { ReportActionError, reportPost, reportProfile } from "@/features/reports/service";
 import { getUnreadNotificationCount, listNotifications } from "@/features/notifications/queries";
 import { markAllNotificationsRead } from "@/features/notifications/service";
 import { recordProfileView } from "@/features/visits/service";
@@ -656,6 +657,41 @@ describe("identity and authorization on PostgreSQL", () => {
     expect(profile.discoverable).toBe(false);
     expect(profile.visibility).toBe("PRIVATE");
     expect(profile.avatarId).toBeNull();
+  });
+  it("reports a post once, rejects a second report and self-reports", async () => {
+    const author = await account("giulia");
+    const reporter = await account("marco");
+    const post = await createPost(author.id, { body: "ciao", visibility: "PUBLIC" });
+    await reportPost(reporter.id, { postId: post.id, reason: "SPAM", detail: "" });
+    await expect(
+      reportPost(reporter.id, { postId: post.id, reason: "SPAM", detail: "" }),
+    ).rejects.toThrow(ReportActionError);
+    await expect(
+      reportPost(author.id, { postId: post.id, reason: "SPAM", detail: "" }),
+    ).rejects.toThrow(ReportActionError);
+    expect(await db.report.count({ where: { postId: post.id } })).toBe(1);
+  });
+  it("reports a profile once and rejects reporting yourself", async () => {
+    const target = await account("giulia");
+    const reporter = await account("marco");
+    await reportProfile(reporter.id, {
+      username: "giulia",
+      reason: "HARASSMENT",
+      detail: "",
+    });
+    await expect(
+      reportProfile(reporter.id, {
+        username: "giulia",
+        reason: "HARASSMENT",
+        detail: "",
+      }),
+    ).rejects.toThrow(ReportActionError);
+    await expect(
+      reportProfile(target.id, { username: "giulia", reason: "OTHER", detail: "" }),
+    ).rejects.toThrow(ReportActionError);
+    expect(
+      await db.report.count({ where: { reportedUserId: target.id } }),
+    ).toBe(1);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

@@ -46,6 +46,19 @@ enum NotificationType {
   MESSAGE
 }
 
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  NUDITY
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+}
+
 model User {
   id                  String                    @id @default(uuid()) @db.Uuid
   email               String                    @unique @db.VarChar(254)
@@ -78,6 +91,8 @@ model User {
   conversationsLow    Conversation[]            @relation("ConversationLow")
   conversationsHigh   Conversation[]            @relation("ConversationHigh")
   participations      ConversationParticipant[]
+  reportsFiled        Report[]                  @relation("ReportsFiled")
+  reportsReceived      Report[]                  @relation("ReportsReceived")
 
   @@index([createdAt, id])
   @@map("users")
@@ -240,6 +255,7 @@ model Post {
   comments      Comment[]
   likes         Like[]
   notifications Notification[]
+  reports       Report[]
 
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
   @@map("posts")
@@ -388,4 +404,25 @@ model RateLimitBucket {
 
   @@index([expiresAt])
   @@map("rate_limit_buckets")
+}
+
+model Report {
+  id             String       @id @default(uuid()) @db.Uuid
+  reporterId     String       @map("reporter_id") @db.Uuid
+  postId         String?      @map("post_id") @db.Uuid
+  reportedUserId String?      @map("reported_user_id") @db.Uuid
+  reason         ReportReason
+  detail         String       @default("") @db.VarChar(500)
+  status         ReportStatus @default(OPEN)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  post           Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reportedUser   User?        @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  // Exactly one of postId/reportedUserId set: enforced by a CHECK constraint
+  // added by hand in the migration (Prisma has no XOR column constraint).
+  @@unique([reporterId, postId])
+  @@unique([reporterId, reportedUserId])
+  @@index([status, createdAt])
+  @@map("reports")
 }

@@ -6,7 +6,7 @@ import { postSchema, commentSchema } from "./schemas";
 
 export class PostActionError extends Error {}
 
-async function canViewPost(
+export async function canViewPost(
   viewerId: string,
   post: { authorId: string; visibility: "PUBLIC" | "FRIENDS" | "PRIVATE" },
 ) {

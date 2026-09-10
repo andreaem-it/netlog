@@ -16,6 +16,7 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 - Notifiche (richiesta di amicizia, accettazione, like, commento, visita profilo) su `/notifiche`, con segna-tutte-come-lette.
 - Visite al profilo su base di consenso esplicito: disattivate di default, l'utente deve attivarle dalle impostazioni. Finestra mobile di 24h per evitare notifiche/registrazioni duplicate dallo stesso visitatore; elenco visitatori (opzionale) limitato agli ultimi 30 giorni.
 - Messaggi privati 1:1 su `/messaggi`, con permesso configurabile (amici/tutti/nessuno), invio idempotente (stesso `clientId` non duplica un messaggio in caso di doppio submit o retry), conteggio dei non letti e aggiornamento della conversazione tramite polling ogni 5 secondi.
+- Segnalazione di post e profili (spam, molestie, incitamento all'odio, nudità, altro), con vincolo a livello database che impedisce di segnalare due volte lo stesso contenuto o di segnalare se stessi. Le segnalazioni sono raccolte in tabella (`status: OPEN`/`RESOLVED`); non esiste ancora un pannello di moderazione per consultarle o agire di conseguenza — resta da fare prima della beta pubblica.
 - Query dei profili già compatibili con amicizie e blocchi; queste relazioni hanno schema e test, ma non ancora interfaccia o servizi di gestione.
 - Schema Prisma dell'intero MVP, migrazioni SQL con vincoli, seed di 20 utenti, test unitari e integrazione PostgreSQL.
 
@@ -152,6 +153,6 @@ Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "so
 6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling.
 7. **Completata:** hardening (header di sicurezza già presenti, verificati), suite E2E automatizzata (`pnpm test:e2e`), misure delle query (indici già coperti, documentati in "Misure delle query"), backup/ripristino (PITR nativo di Neon, documentato) e deploy (già in produzione su Vercel dalle milestone precedenti).
 
-Prima della beta pubblica restano inoltre segnalazioni/moderazione, policy per età/privacy/conservazione, configurazione SMTP effettiva e controllo delle dipendenze. Nessun deploy pubblico è stato eseguito.
+Prima della beta pubblica restano inoltre un pannello di moderazione per le segnalazioni raccolte (nessuna azione automatica al momento), policy per età/privacy/conservazione, configurazione SMTP effettiva e aggiornamento delle dipendenze major disponibili (verificato con `pnpm audit`: nessuna vulnerabilità nota al 2026-09-10). Nessun deploy pubblico è stato eseguito.
 
 **Nota operativa**: la verifica email è implementata a livello di codice (token, pagina `/verify-email`, reinvio dalle impostazioni), ma in produzione **`SMTP_URL` non risulta configurato** (solo `MAIL_TRANSPORT`/`MAIL_FROM` sono presenti nelle env Vercel): finché non viene impostato un provider SMTP reale, l'invio delle email (verifica e anche il recupero password, che ha lo stesso requisito) fallisce silenziosamente lato server — l'utente non riceve alcun errore visibile, semplicemente non arriva l'email. Da configurare prima della beta pubblica.

@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { getComments } from "../queries";
 import { deleteCommentAction, deletePostAction, toggleLikeAction } from "../actions";
 import { CommentForm } from "./comment-form";
+import { ReportButton } from "@/features/reports/components/report-button";
 
 const VISIBILITY_LABEL: Record<string, string> = {
   PUBLIC: "Tutti",
@@ -54,13 +55,15 @@ export async function PostCard({
             </span>
           </span>
         </Link>
-        {post.owner && (
+        {post.owner ? (
           <form action={deletePostAction}>
             <input type="hidden" name="postId" value={post.id} />
             <button className="button button-subtle" type="submit" aria-label="Elimina post">
               <Trash2 size={15} />
             </button>
           </form>
+        ) : (
+          <ReportButton target="post" postId={post.id} />
         )}
       </div>
       <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>

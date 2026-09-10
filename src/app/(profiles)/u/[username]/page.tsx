@@ -8,6 +8,7 @@ import { recordProfileView } from "@/features/visits/service";
 import { listVisitors } from "@/features/visits/queries";
 import { AppShell } from "@/components/layout/app-shell";
 import { Brand } from "@/components/ui/brand";
+import { ReportButton } from "@/features/reports/components/report-button";
 export const metadata = { title: "Profilo" };
 export default async function ProfilePage({
   params,
@@ -38,6 +39,7 @@ export default async function ProfilePage({
           <Link href={`/messaggi/${profile.username}`} className="button">
             Manda un messaggio
           </Link>
+          <ReportButton target="profile" username={profile.username} />
         </div>
       )}
       {visitors.length > 0 && (
