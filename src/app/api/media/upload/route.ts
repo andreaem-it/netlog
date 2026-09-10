@@ -14,8 +14,10 @@ import {
 
 const clientMetaSchema = z.object({
   kind: z.enum(["avatar", "cover"]),
-  width: z.number().int().positive().max(8000),
-  height: z.number().int().positive().max(8000),
+  // ponytail: sanity bound, not a real constraint — file size (5MB) already caps the payload.
+  // Raised from 8000 after a real high-res phone photo (>8000px) was rejected.
+  width: z.number().int().positive().max(20000),
+  height: z.number().int().positive().max(20000),
   size: z.number().int().positive().max(AVATAR_COVER_MAX_BYTES),
 });
 const tokenPayloadSchema = clientMetaSchema.extend({ userId: z.uuid() });
@@ -63,8 +65,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(jsonResponse);
   } catch (error) {
-    // ponytail: temporary diagnostic, revert once the upload 400 cause is found
-    console.error("media_upload_failed", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Upload fallito." },
       { status: 400 },
