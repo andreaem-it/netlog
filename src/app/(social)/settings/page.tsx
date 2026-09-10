@@ -37,8 +37,16 @@ export default async function SettingsPage() {
           <h2>Foto del profilo</h2>
           <p className="muted">JPEG, PNG o WebP, fino a 5&nbsp;MB.</p>
           <div className="button-row">
-            <MediaUploader kind="avatar" label="Cambia avatar" />
-            <MediaUploader kind="cover" label="Cambia copertina" />
+            <MediaUploader
+              kind="avatar"
+              label="Cambia avatar"
+              currentUrl={profile.avatarUrl}
+            />
+            <MediaUploader
+              kind="cover"
+              label="Cambia copertina"
+              currentUrl={profile.coverUrl}
+            />
           </div>
         </aside>
       </div>

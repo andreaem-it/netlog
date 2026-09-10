@@ -27,20 +27,25 @@ function readImageDimensions(file: File) {
 export function MediaUploader({
   kind,
   label,
+  currentUrl,
 }: {
   kind: "avatar" | "cover";
   label: string;
+  currentUrl?: string | null;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
 
   async function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
     setError(null);
+    setSuccess(false);
     if (!AVATAR_COVER_MIME_TYPES.includes(file.type)) {
       setError("Formato non supportato. Usa JPEG, PNG o WebP.");
       return;
@@ -63,6 +68,8 @@ export function MediaUploader({
           size: file.size,
         }),
       });
+      setPreview(URL.createObjectURL(file));
+      setSuccess(true);
       // ponytail: the DB row is written by the onUploadCompleted webhook,
       // which only reaches this app on a publicly deployed URL (not plain
       // local dev). Refresh picks it up once that call has landed.
@@ -78,8 +85,18 @@ export function MediaUploader({
     }
   }
 
+  const displayUrl = preview ?? currentUrl;
+
   return (
-    <span>
+    <span className="media-uploader">
+      {displayUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- plain <img>: app doesn't use next/image elsewhere.
+        <img
+          src={displayUrl}
+          alt={`Anteprima ${kind === "avatar" ? "avatar" : "copertina"}`}
+          className={kind === "avatar" ? "avatar avatar-large" : "cover-preview"}
+        />
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -99,6 +116,11 @@ export function MediaUploader({
       {error && (
         <p className="form-message error" role="alert">
           {error}
+        </p>
+      )}
+      {success && !error && (
+        <p className="form-message success" role="status">
+          Immagine caricata.
         </p>
       )}
     </span>
