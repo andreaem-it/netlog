@@ -13,6 +13,8 @@ export async function getProfile(username: string, viewerId?: string) {
       city: true,
       visibility: true,
       createdAt: true,
+      avatar: { select: { storageKey: true } },
+      cover: { select: { storageKey: true } },
       user: { select: { name: true, status: true } },
     },
   });
@@ -51,6 +53,8 @@ export async function getProfile(username: string, viewerId?: string) {
     city: profile.city,
     visibility: profile.visibility,
     joinedAt: profile.createdAt,
+    avatarUrl: profile.avatar?.storageKey ?? null,
+    coverUrl: profile.cover?.storageKey ?? null,
     owner,
   };
 }
@@ -65,6 +69,8 @@ export async function getOwnProfile(userId: string) {
       city: true,
       birthDate: true,
       visibility: true,
+      avatar: { select: { storageKey: true } },
+      cover: { select: { storageKey: true } },
       user: { select: { name: true } },
     },
   });
@@ -76,6 +82,8 @@ export async function getOwnProfile(userId: string) {
     city: profile.city,
     birthDate: profile.birthDate,
     visibility: profile.visibility,
+    avatarUrl: profile.avatar?.storageKey ?? null,
+    coverUrl: profile.cover?.storageKey ?? null,
   };
 }
 

@@ -20,7 +20,7 @@ import {
   getProfile,
   searchProfiles,
 } from "@/features/profiles/queries";
-import { updateOwnProfile } from "@/features/profiles/service";
+import { applyProfileMedia, updateOwnProfile } from "@/features/profiles/service";
 import { orderedPair } from "@/features/profiles/policy";
 import { validateSession } from "@/server/authorization/validate-session";
 import { consumeRateLimit } from "@/server/security/rate-limit";
@@ -266,6 +266,30 @@ describe("identity and authorization on PostgreSQL", () => {
     expect(results.profiles).toEqual([]);
     const noViewer = await searchProfiles({ query: "marco" });
     expect(noViewer.profiles.map((p) => p.username)).toEqual(["marco"]);
+  });
+  it("swaps the avatar and reports the previous asset for cleanup", async () => {
+    const a = await account("giulia");
+    const media = {
+      userId: a.id,
+      kind: "avatar" as const,
+      mimeType: "image/webp",
+      size: 1000,
+      width: 256,
+      height: 256,
+    };
+    const first = await applyProfileMedia({ ...media, storageKey: "blob://one" });
+    expect(first.previousAssetId).toBeNull();
+    const profileAfterFirst = await db.profile.findUniqueOrThrow({
+      where: { userId: a.id },
+    });
+    expect(profileAfterFirst.avatarId).toBe(first.assetId);
+    const second = await applyProfileMedia({ ...media, storageKey: "blob://two" });
+    expect(second.previousAssetId).toBe(first.assetId);
+    const profileAfterSecond = await db.profile.findUniqueOrThrow({
+      where: { userId: a.id },
+    });
+    expect(profileAfterSecond.avatarId).toBe(second.assetId);
+    expect(profileAfterSecond.coverId).toBeNull();
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

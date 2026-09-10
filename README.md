@@ -9,6 +9,7 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 - Recupero password con token monouso di 30 minuti, invio email, protezione dai tentativi ripetuti e revoca delle sessioni precedenti.
 - Home personale, profilo pubblico, modifica di nome/bio/città/data di nascita (facoltativa, mai pubblica) e visibilità pubblico/privato.
 - Ricerca paginata dei profili pubblici e discoverable, su `/persone`, con esclusione automatica degli utenti bloccati.
+- Avatar e copertina personalizzati (JPEG/PNG/WebP, fino a 5&nbsp;MB), caricati direttamente dal browser su Vercel Blob e collegati al profilo.
 - Query dei profili già compatibili con amicizie e blocchi; queste relazioni hanno schema e test, ma non ancora interfaccia o servizi di gestione.
 - Schema Prisma dell'intero MVP, migrazioni SQL con vincoli, seed di 20 utenti, test unitari e integrazione PostgreSQL.
 
@@ -66,6 +67,12 @@ pnpm db:seed
 
 Il seed crea 20 utenti sintetici, ad esempio `giulia@demo.example.test`, con la password locale configurata. È ripetibile e aggiorna la password dei soli account demo quando `SEED_PASSWORD` cambia. Rifiuta esecuzioni in produzione e host database non locali. I profili demo esistono nel database, non nei componenti di produzione.
 
+## Avatar e copertina
+
+Caricamento diretto dal browser a Vercel Blob (store pubblico `netlog-media`), tramite `/api/media/upload` che genera un token con `@vercel/blob/client` e valida tipo/dimensione file. `BLOB_READ_WRITE_TOKEN` è già collegato al progetto Vercel; in locale è in `.env.local` (non committato).
+
+Il record in `media_assets` e il collegamento al profilo vengono scritti dal webhook `onUploadCompleted`, che Vercel richiama solo su un URL pubblicamente raggiungibile: in sviluppo locale puro il file arriva su Blob ma il profilo non si aggiorna finché non si espone l'app con un tunnel pubblico (es. `ngrok`). In produzione funziona senza passaggi aggiuntivi.
+
 ## Collaudo manuale in produzione/staging
 
 Il seed demo non è utilizzabile in produzione (viene rifiutato). Per verificare manualmente signup e login su un ambiente distribuito:
@@ -110,7 +117,7 @@ Le migrazioni contengono anche vincoli CHECK, un indice parziale sulle richieste
 ## Prossime milestone
 
 1. **Completata:** fondazioni, identità, reset password, profilo base, seed e primi test.
-2. **In parte completata:** data di nascita opzionale (mai esposta pubblicamente) e ricerca paginata dei profili pubblici sono attive. Avatar/cover con validazione e storage restano da fare: richiedono di scegliere un backend di storage (Vercel Blob, S3, R2…) prima di iniziare.
+2. **Completata:** data di nascita opzionale (mai esposta pubblicamente), ricerca paginata dei profili pubblici, avatar/cover su Vercel Blob.
 3. Servizi e UI per amicizie, richieste, blocchi, privacy completa e autorizzazioni concorrenti.
 4. Post, immagini, commenti, like, feed cronologico e attività.
 5. Visite con finestra mobile e consenso, notifiche e conservazione dei dati.

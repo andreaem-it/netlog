@@ -1,6 +1,7 @@
 import { requireUser } from "@/server/authorization/session";
 import { getOwnProfile } from "@/features/profiles/queries";
 import { ProfileForm } from "@/features/profiles/components/profile-form";
+import { MediaUploader } from "@/features/profiles/components/media-uploader";
 import Link from "next/link";
 export const metadata = { title: "Impostazioni" };
 export default async function SettingsPage() {
@@ -33,7 +34,12 @@ export default async function SettingsPage() {
             Reimposta la password
           </Link>
           <div className="divider" />
-          <p>Avatar e copertina personalizzati arriveranno presto.</p>
+          <h2>Foto del profilo</h2>
+          <p className="muted">JPEG, PNG o WebP, fino a 5&nbsp;MB.</p>
+          <div className="button-row">
+            <MediaUploader kind="avatar" label="Cambia avatar" />
+            <MediaUploader kind="cover" label="Cambia copertina" />
+          </div>
         </aside>
       </div>
     </>

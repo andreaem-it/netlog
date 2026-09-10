@@ -19,20 +19,33 @@ export function ProfileCard({
     city: string | null;
     joinedAt: Date;
     visibility: string;
+    avatarUrl?: string | null;
+    coverUrl?: string | null;
     owner: boolean;
   };
 }) {
   return (
     <section className="card" aria-label={`Profilo di ${profile.name}`}>
       <div className="profile-cover">
-        <span className="cover-label">UNO SPAZIO PER ESSERE TE</span>
-        <span className="cover-word" aria-hidden="true">
-          {brand.shortName.toLowerCase()}.
-        </span>
+        {profile.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- plain <img>: app doesn't use next/image elsewhere.
+          <img
+            src={profile.coverUrl}
+            alt=""
+            className="profile-cover-image"
+          />
+        ) : (
+          <>
+            <span className="cover-label">UNO SPAZIO PER ESSERE TE</span>
+            <span className="cover-word" aria-hidden="true">
+              {brand.shortName.toLowerCase()}.
+            </span>
+          </>
+        )}
       </div>
       <div className="profile-content">
         <div className="profile-topline">
-          <Avatar name={profile.name} large />
+          <Avatar name={profile.name} src={profile.avatarUrl} large />
           {profile.owner && (
             <Link href="/settings" className="button">
               <Pencil size={15} />
