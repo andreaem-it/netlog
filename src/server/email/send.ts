@@ -3,14 +3,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import nodemailer from "nodemailer";
-import { getEnv } from "@/config/env";
+import { getMailEnv } from "@/config/env";
 
 export async function sendEmail(message: {
   to: string;
   subject: string;
   text: string;
 }) {
-  const env = getEnv();
+  const env = getMailEnv();
   if (env.MAIL_TRANSPORT === "file") {
     const directory = path.join(process.cwd(), ".local", "mail");
     await mkdir(directory, { recursive: true, mode: 0o700 });

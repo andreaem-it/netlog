@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { ZodError } from "zod";
+import { ConfigurationError } from "@/config/env";
 import { signIn, signOut } from "@/auth";
 import { clientIdentity, RateLimitError } from "@/server/security/rate-limit";
 import {
@@ -15,10 +16,27 @@ import {
 import { loginSchema, type FormState } from "./schemas";
 
 function errorState(error: unknown): FormState {
+  if (error instanceof ConfigurationError) {
+    console.error("account_configuration_invalid", { fields: error.fields });
+    return { status: "error", message: error.message };
+  }
   if (error instanceof ZodError)
     return {
       status: "error",
-      message: error.issues[0]?.message ?? "Controlla i dati inseriti.",
+      message: (() => {
+        const issue = error.issues[0];
+        if (!issue) return "Controlla i dati inseriti.";
+        const field = issue.path[0];
+        const labels: Record<string, string> = {
+          name: "Nome visualizzato",
+          username: "Username",
+          email: "Email",
+          password: "Password",
+        };
+        return labels[String(field)]
+          ? `${labels[String(field)]}: ${issue.message}`
+          : issue.message;
+      })(),
     };
   if (error instanceof AccountInputError || error instanceof RateLimitError)
     return { status: "error", message: error.message };
@@ -52,17 +70,11 @@ export async function loginAction(
   if (!parsed.success)
     return { status: "error", message: "Controlla email e password." };
   try {
-    const result = await signIn("credentials", {
+    await signIn("credentials", {
       ...parsed.data,
       redirect: false,
+      redirectTo: "/home",
     });
-    if (result?.error) {
-      return {
-        status: "error",
-        message:
-          "Accesso non riuscito. Controlla email e password o attendi qualche minuto prima di riprovare.",
-      };
-    }
   } catch (error) {
     if (error instanceof AuthError)
       return {

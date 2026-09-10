@@ -1,4 +1,12 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { randomBytes, randomUUID } from "node:crypto";
 import { db } from "@/server/db/client";
 import {
@@ -27,8 +35,22 @@ beforeEach(async () => {
   await db.rateLimitBucket.deleteMany();
 });
 afterAll(() => db.$disconnect());
+afterEach(() => vi.unstubAllEnvs());
 
 describe("identity and authorization on PostgreSQL", () => {
+  it("registers and logs in with missing mail and URL settings in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_URL", "");
+    vi.stubEnv("SMTP_URL", "");
+    vi.stubEnv("MAIL_TRANSPORT", "file");
+    const user = await account("giulia");
+    expect(
+      await authenticateAccount(
+        { email: "giulia@example.test", password },
+        "production-client",
+      ),
+    ).toMatchObject({ id: user.id });
+  });
   it("registers atomically with a hashed password and rejects duplicates", async () => {
     const outcomes = await Promise.allSettled([
       account("giulia"),

@@ -30,7 +30,7 @@ export const usernameSchema = z
 export const nameSchema = z
   .string()
   .trim()
-  .min(2, "Inserisci il tuo nome.")
+  .min(1, "Inserisci il tuo nome.")
   .max(60)
   .refine(
     (value) => !/[\u0000-\u001f\u007f]/.test(value),

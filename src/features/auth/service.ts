@@ -9,7 +9,7 @@ import {
 } from "@/server/security/password";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { sendEmail } from "@/server/email/send";
-import { getEnv } from "@/config/env";
+import { getAppUrl, getMailEnv } from "@/config/env";
 import { brand } from "@/config/brand";
 import {
   registerSchema,
@@ -89,6 +89,9 @@ export async function requestPasswordReset(
   const email = emailSchema.parse(emailInput);
   await consumeRateLimit("reset-ip", identity, 20, 3600);
   await consumeRateLimit("reset-email", email, 3, 3600);
+  // Validate email settings before looking up account existence.
+  const appUrl = getAppUrl();
+  getMailEnv();
   const user = await db.user.findUnique({
     where: { email },
     select: { id: true, status: true },
@@ -102,7 +105,7 @@ export async function requestPasswordReset(
       expiresAt: new Date(Date.now() + 30 * 60_000),
     },
   });
-  const url = new URL("/reset-password", getEnv().APP_URL);
+  const url = new URL("/reset-password", appUrl);
   url.searchParams.set("token", token);
   try {
     await sendEmail({

@@ -2,7 +2,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
 import { db } from "@/server/db/client";
-import { getEnv } from "@/config/env";
+import { getSecurityEnv } from "@/config/env";
 
 export class RateLimitError extends Error {
   constructor() {
@@ -11,7 +11,7 @@ export class RateLimitError extends Error {
 }
 
 export function clientIdentity(headers: Headers): string {
-  if (getEnv().TRUST_PROXY !== "true") return "direct-local";
+  if (getSecurityEnv().TRUST_PROXY !== "true") return "direct-local";
   const candidate = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return candidate && isIP(candidate) ? candidate : "unknown-proxy-client";
 }
@@ -22,7 +22,7 @@ export async function consumeRateLimit(
   limit: number,
   windowSeconds: number,
 ) {
-  const key = createHmac("sha256", getEnv().AUTH_SECRET)
+  const key = createHmac("sha256", getSecurityEnv().AUTH_SECRET)
     .update(`${scope}:${identity}`)
     .digest("hex");
   // Single UPSERT: distributed application instances share the same atomic counter.

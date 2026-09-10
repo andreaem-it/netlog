@@ -51,7 +51,9 @@ In un altro terminale eseguire `pnpm db:generate`, `pnpm db:deploy` e `pnpm dev`
 
 In sviluppo `MAIL_TRANSPORT=file` salva le email in `.local/mail/*.json`, con permessi limitati al proprietario. Aprire il file più recente per seguire il link di reset. Non ci sono token in console né link restituiti al browser tramite l'azione.
 
-In produzione impostare `MAIL_TRANSPORT=smtp`, `SMTP_URL`, un `MAIL_FROM` verificato, `APP_URL` e `AUTH_URL` HTTPS e un `AUTH_SECRET` casuale. Il trasporto file è rifiutato in produzione. Le email non sono state inviate a un servizio esterno durante lo sviluppo.
+Per il recupero password in produzione impostare `MAIL_TRANSPORT=smtp`, `SMTP_URL`, un `MAIL_FROM` verificato e `APP_URL` HTTPS. Il trasporto file è rifiutato in produzione. Registrazione e login non richiedono le impostazioni email: usano il database, `AUTH_SECRET` e la configurazione Auth.js. Gli errori di configurazione sono distinti dagli errori dei campi; nei log sono indicati soltanto i nomi delle variabili da correggere, mai i valori. Le email non sono state inviate a un servizio esterno durante lo sviluppo.
+
+Un file esportato da Vercel che contiene `[SENSITIVE]` non contiene le credenziali effettive: non può essere usato per connettersi a Neon o provare l'autenticazione localmente. Non sostituire con questi segnaposto i valori reali nella dashboard.
 
 ## Seed demo
 

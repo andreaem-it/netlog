@@ -34,7 +34,6 @@ export function AuthForm({ mode, token }: { mode: Mode; token?: string }) {
               name="name"
               autoComplete="name"
               required
-              minLength={2}
               maxLength={60}
               placeholder="Come ti chiami?"
             />
@@ -47,7 +46,6 @@ export function AuthForm({ mode, token }: { mode: Mode; token?: string }) {
                 name="username"
                 autoComplete="username"
                 required
-                minLength={3}
                 maxLength={24}
                 pattern="[a-zA-Z][a-zA-Z0-9_]*"
                 placeholder="il_tuo_nome"
@@ -84,7 +82,6 @@ export function AuthForm({ mode, token }: { mode: Mode; token?: string }) {
             name="password"
             type="password"
             required
-            minLength={mode === "login" ? 1 : 12}
             maxLength={128}
             autoComplete={
               mode === "login" ? "current-password" : "new-password"
