@@ -25,8 +25,8 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 | FATTO | P0 | Diagnosticare e completare migrazione Neon in produzione | `src/auth.ts` | — | 503 risolto: `trustHost:true` in NextAuth, vedi changelog |
 | FATTO | P0 | Pubblicare il fix che mostra l’errore di login | `src/features/auth/actions.ts` | — | `pnpm lint`, `pnpm typecheck` verdi; commit creato |
 | FATTO | P0 | Verificare signup e login end-to-end su `https://netlog-phi.vercel.app` | browser/Vercel | — | Registrazione + login confermati, redirect a `/home` con sessione attiva |
-| TODO | P1 | Aggiungere test per il risultato `signIn` con `error=` | `src/`, test auth | — | Test unitario verde |
-| TODO | P1 | Documentare credenziali e procedura di test senza segreti reali | `README.md` | — | README aggiornato |
+| FATTO | P1 | Aggiungere test per il risultato `signIn` con `error=` | `src/features/auth/actions.test.ts` | — | `pnpm test` verde (2 nuovi test) |
+| FATTO | P1 | Documentare credenziali e procedura di test senza segreti reali | `README.md` | — | Sezione "Collaudo manuale in produzione/staging" aggiunta |
 | TODO | P2 | Sviluppare il prossimo modulo MVP concordato | da definire | — | Criteri aggiunti prima di iniziare |
 
 ## Lavoro completato di recente
@@ -52,3 +52,4 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 - 2026-09-10 — Claude: **causa trovata**: `UntrustedHost` di Auth.js — `"Host must be trusted. URL was: https://netlog-phi.vercel.app/..."`. NextAuth v5 non trustava l'host di produzione. Fix: aggiunto `trustHost: true` esplicito nella config `NextAuth({...})` in `src/auth.ts` (commit `0aa9e80`). Dopo il deploy, `POST /login` non ritorna più 503 ma 200.
 - 2026-09-10 — Claude: con il 503 risolto, il login con le credenziali di test fallisce ora con l'errore normale `CredentialsSignin` (Auth.js) — cioè nessun account attivo corrisponde a quelle credenziali in questo database. Il proprietario conferma che l'account dovrebbe già esistere: probabile causa è che sia stato creato quando `DATABASE_URL` puntava a un database diverso (pre-migrazione Neon), quindi non presente nel DB Neon attuale. Serve verificare/ricreare l'account per completare il test end-to-end.
 - 2026-09-10 — Claude: registrato l'account di test (`andrea.test@example.test` / `andrea_test`) via `/register` su produzione, poi eseguito login: redirect a `/home` con sessione attiva ("Ciao, Andrea."). **Signup + login end-to-end confermati funzionanti.** Migrazione Neon considerata chiusa.
+- 2026-09-10 — Claude: aggiunto `src/features/auth/actions.test.ts` (unit, mock di `@/auth` e `next/navigation`) che copre `loginAction` sia quando `signIn` ritorna una callback URL con `error=` (mostra l'errore, non reindirizza) sia quando ha successo (redirect a `/home`). `pnpm test` → 4 file, 20 test verdi. Aggiunta al README la sezione "Collaudo manuale in produzione/staging" con la procedura per account di test usa-e-getta senza segreti reali nei commit.

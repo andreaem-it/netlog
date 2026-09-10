@@ -65,6 +65,15 @@ pnpm db:seed
 
 Il seed crea 20 utenti sintetici, ad esempio `giulia@demo.example.test`, con la password locale configurata. È ripetibile e aggiorna la password dei soli account demo quando `SEED_PASSWORD` cambia. Rifiuta esecuzioni in produzione e host database non locali. I profili demo esistono nel database, non nei componenti di produzione.
 
+## Collaudo manuale in produzione/staging
+
+Il seed demo non è utilizzabile in produzione (viene rifiutato). Per verificare manualmente signup e login su un ambiente distribuito:
+
+1. Registrare un account usa-e-getta tramite `/register` con un indirizzo sotto il dominio riservato ai test `example.test` (mai risolvibile, mai un dominio reale), ad esempio `nome.cognome+test@example.test`, e una password generata al momento (almeno 12 caratteri, mai una password già in uso altrove).
+2. Verificare il login con le stesse credenziali su `/login`: deve reindirizzare a `/home` con la sessione attiva.
+3. Non annotare le credenziali di test in commit, issue o `HANDOFF.md`: se serve tracciare che un test è stato eseguito, indicare solo che è stato fatto e l'esito, non i valori usati.
+4. Un file `.env` esportato da Vercel che contiene `[SENSITIVE]` è un segnaposto, non un segreto reale: non sostituirlo ai valori nella dashboard e non usarlo per collegarsi a Neon.
+
 ## Verifiche
 
 ```sh
