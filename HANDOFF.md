@@ -24,7 +24,7 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 |---|---:|---|---|---|---|
 | IN CORSO | P0 | Diagnosticare e completare migrazione Neon in produzione | `prisma/`, Vercel env | Codex | Registrazione online crea un account |
 | FATTO | P0 | Pubblicare il fix che mostra l’errore di login | `src/features/auth/actions.ts` | — | `pnpm lint`, `pnpm typecheck` verdi; commit creato |
-| TODO | P0 | Verificare signup e login end-to-end su `https://netlog-phi.vercel.app` | browser/Vercel | — | Account test entra in `/home` |
+| BLOCCATO | P0 | Verificare signup e login end-to-end su `https://netlog-phi.vercel.app` | browser/Vercel | — | Account test entra in `/home` |
 | TODO | P1 | Aggiungere test per il risultato `signIn` con `error=` | `src/`, test auth | — | Test unitario verde |
 | TODO | P1 | Documentare credenziali e procedura di test senza segreti reali | `README.md` | — | README aggiornato |
 | TODO | P2 | Sviluppare il prossimo modulo MVP concordato | da definire | — | Criteri aggiunti prima di iniziare |
@@ -45,3 +45,4 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 
 - 2026-09-10 — Codex: creato questo file e registrato il fix login locale non ancora pushato.
 - 2026-09-10 — Claude: verificato lint/typecheck e committato il fix login (`error=` in callback URL gestito senza redirect silenzioso).
+- 2026-09-10 — Claude: tentata verifica login su `https://netlog-phi.vercel.app` con `curl`. `GET /api/auth/csrf` ritorna `{"message":"There was a problem with the server configuration..."}` — stesso blocco P0 della migrazione Neon segnalato da Codex. Login non testabile finché quello non è risolto.
