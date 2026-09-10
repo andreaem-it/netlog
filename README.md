@@ -118,6 +118,8 @@ Server Actions e Auth.js mantengono le rispettive protezioni CSRF. Non aggiunger
 
 Le migrazioni contengono anche vincoli CHECK, un indice parziale sulle richieste pendenti, trigger differiti per i partecipanti e il vincolo del cursore di lettura. Sono intenzionali e non vanno eliminati per allineare solamente il file Prisma. Usare migrazioni versionate, non `db push` in produzione.
 
+Il comando di build su Vercel è sovrascritto in `vercel.json` (`prisma migrate deploy && prisma generate && next build`): ogni deploy applica automaticamente le migrazioni pendenti al database di produzione prima di buildare, usando le credenziali che Vercel già inietta nell'ambiente di build.
+
 `pnpm db:cleanup` rimuove token, sessioni database e contatori scaduti. Programmare questo comando prima del rilascio; non è stato creato alcun job sul sistema dell'utente.
 
 ## Backup e ripristino
