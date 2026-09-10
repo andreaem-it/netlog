@@ -13,6 +13,7 @@ export async function updateOwnProfile(actor: { id: string }, input: unknown) {
         update: {
           bio: data.bio,
           city: data.city || null,
+          birthDate: data.birthDate ?? null,
           visibility: data.visibility,
         },
       },

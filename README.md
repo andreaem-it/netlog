@@ -7,7 +7,8 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 - Registrazione email/password con username univoco e creazione atomica del profilo.
 - Login/logout con Auth.js Credentials, password Argon2id e sessioni JWT revocabili.
 - Recupero password con token monouso di 30 minuti, invio email, protezione dai tentativi ripetuti e revoca delle sessioni precedenti.
-- Home personale, profilo pubblico, modifica di nome/bio/città e visibilità pubblico/privato.
+- Home personale, profilo pubblico, modifica di nome/bio/città/data di nascita (facoltativa, mai pubblica) e visibilità pubblico/privato.
+- Ricerca paginata dei profili pubblici e discoverable, su `/persone`, con esclusione automatica degli utenti bloccati.
 - Query dei profili già compatibili con amicizie e blocchi; queste relazioni hanno schema e test, ma non ancora interfaccia o servizi di gestione.
 - Schema Prisma dell'intero MVP, migrazioni SQL con vincoli, seed di 20 utenti, test unitari e integrazione PostgreSQL.
 
@@ -109,7 +110,7 @@ Le migrazioni contengono anche vincoli CHECK, un indice parziale sulle richieste
 ## Prossime milestone
 
 1. **Completata:** fondazioni, identità, reset password, profilo base, seed e primi test.
-2. Profili estesi, data di nascita opzionale, avatar/cover validati e storage, ricerca paginata.
+2. **In parte completata:** data di nascita opzionale (mai esposta pubblicamente) e ricerca paginata dei profili pubblici sono attive. Avatar/cover con validazione e storage restano da fare: richiedono di scegliere un backend di storage (Vercel Blob, S3, R2…) prima di iniziare.
 3. Servizi e UI per amicizie, richieste, blocchi, privacy completa e autorizzazioni concorrenti.
 4. Post, immagini, commenti, like, feed cronologico e attività.
 5. Visite con finestra mobile e consenso, notifiche e conservazione dei dati.

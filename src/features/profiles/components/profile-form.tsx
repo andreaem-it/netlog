@@ -10,6 +10,7 @@ export function ProfileForm({
     name: string;
     bio: string;
     city: string | null;
+    birthDate: Date | null;
     visibility: string;
   };
 }) {
@@ -22,6 +23,9 @@ export function ProfileForm({
   const [name, setName] = useState(profile.name);
   const [bio, setBio] = useState(profile.bio);
   const [city, setCity] = useState(profile.city ?? "");
+  const [birthDate, setBirthDate] = useState(
+    profile.birthDate ? profile.birthDate.toISOString().slice(0, 10) : "",
+  );
   const [visibility, setVisibility] = useState(profile.visibility);
   return (
     <form action={action} className="form-stack">
@@ -60,6 +64,19 @@ export function ProfileForm({
           autoComplete="address-level2"
           placeholder="Dove ti senti a casa?"
         />
+      </label>
+      <label>
+        Data di nascita
+        <input
+          type="date"
+          name="birthDate"
+          value={birthDate}
+          onChange={(event) => setBirthDate(event.target.value)}
+          autoComplete="bday"
+        />
+        <span className="field-hint">
+          Facoltativa e non mostrata pubblicamente sul profilo.
+        </span>
       </label>
       <label>
         Chi può vedere il tuo profilo?

@@ -15,7 +15,11 @@ import {
   resetPassword,
   tokenDigest,
 } from "@/features/auth/service";
-import { getProfile } from "@/features/profiles/queries";
+import {
+  getOwnProfile,
+  getProfile,
+  searchProfiles,
+} from "@/features/profiles/queries";
 import { updateOwnProfile } from "@/features/profiles/service";
 import { orderedPair } from "@/features/profiles/policy";
 import { validateSession } from "@/server/authorization/validate-session";
@@ -234,6 +238,34 @@ describe("identity and authorization on PostgreSQL", () => {
         },
       }),
     ).resolves.toHaveProperty("id");
+  });
+  it("saves the birth date for the owner but never exposes it publicly", async () => {
+    const a = await account("giulia");
+    await updateOwnProfile(a, {
+      name: "giulia",
+      bio: "",
+      city: "",
+      birthDate: "2000-05-01",
+      visibility: "PUBLIC",
+    });
+    const own = await getOwnProfile(a.id);
+    expect(own?.birthDate).toEqual(new Date("2000-05-01T00:00:00.000Z"));
+    const publicDto = await getProfile("giulia", a.id);
+    expect(publicDto).not.toHaveProperty("birthDate");
+  });
+  it("searches discoverable public profiles and excludes blocked users", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("marcofoo");
+    await db.profile.update({
+      where: { userId: c.id },
+      data: { discoverable: false },
+    });
+    await db.block.create({ data: { blockerId: a.id, blockedId: b.id } });
+    const results = await searchProfiles({ query: "marco", viewerId: a.id });
+    expect(results.profiles).toEqual([]);
+    const noViewer = await searchProfiles({ query: "marco" });
+    expect(noViewer.profiles.map((p) => p.username)).toEqual(["marco"]);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

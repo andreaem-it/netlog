@@ -17,7 +17,7 @@ export function Navigation({ username }: { username: string }) {
     <nav aria-label="Navigazione principale">
       {[
         { label: "Home", href: "/home", icon: House },
-        { label: "Persone", icon: Users },
+        { label: "Persone", href: "/persone", icon: Users },
         { label: "Amici", icon: HeartHandshake },
         { label: "Messaggi", icon: MessageCircle },
         { label: "Notifiche", icon: Bell },

@@ -52,6 +52,33 @@ export const resetPasswordSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/),
   password: passwordSchema,
 });
+function ageInYears(date: Date) {
+  return (Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+}
+export const birthDateSchema = z
+  .string()
+  .trim()
+  .optional()
+  .refine(
+    (value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value),
+    "Data di nascita non valida.",
+  )
+  .transform((value) =>
+    value ? new Date(`${value}T00:00:00.000Z`) : undefined,
+  )
+  .refine(
+    (value) => !value || value.getTime() < Date.now(),
+    "La data di nascita deve essere nel passato.",
+  )
+  .refine(
+    (value) => !value || ageInYears(value) >= 13,
+    "Devi avere almeno 13 anni.",
+  )
+  .refine(
+    (value) => !value || ageInYears(value) <= 120,
+    "Data di nascita non valida.",
+  );
+
 export const editProfileSchema = z.object({
   name: nameSchema,
   bio: z
@@ -59,6 +86,7 @@ export const editProfileSchema = z.object({
     .trim()
     .max(500, "La bio può contenere al massimo 500 caratteri."),
   city: z.string().trim().max(80),
+  birthDate: birthDateSchema,
   visibility: z.enum(["PUBLIC", "PRIVATE"]),
 });
 

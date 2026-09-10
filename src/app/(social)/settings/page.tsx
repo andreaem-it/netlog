@@ -1,11 +1,11 @@
 import { requireUser } from "@/server/authorization/session";
-import { getProfile } from "@/features/profiles/queries";
+import { getOwnProfile } from "@/features/profiles/queries";
 import { ProfileForm } from "@/features/profiles/components/profile-form";
 import Link from "next/link";
 export const metadata = { title: "Impostazioni" };
 export default async function SettingsPage() {
   const user = await requireUser();
-  const profile = await getProfile(user.profile?.username ?? "", user.id);
+  const profile = await getOwnProfile(user.id);
   if (!profile) throw new Error("Profile missing.");
   return (
     <>
