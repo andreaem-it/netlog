@@ -42,6 +42,10 @@ export const registerSchema = z.object({
   username: usernameSchema,
   email: emailSchema,
   password: passwordSchema,
+  ageConsent: z.literal(
+    "on",
+    "Devi confermare di avere almeno 13 anni e accettare i Termini e la Privacy Policy.",
+  ),
 });
 export const loginSchema = z.object({
   email: emailSchema,

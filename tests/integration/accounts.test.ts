@@ -73,7 +73,13 @@ import { consumeRateLimit } from "@/server/security/rate-limit";
 const password = "this is a long test password";
 async function account(username: string) {
   return registerAccount(
-    { username, email: `${username}@example.test`, name: username, password },
+    {
+      username,
+      email: `${username}@example.test`,
+      name: username,
+      password,
+      ageConsent: "on",
+    },
     randomUUID(),
   );
 }

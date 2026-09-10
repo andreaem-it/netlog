@@ -6,13 +6,25 @@ it("normalizes identifiers without modifying passwords", () => {
     username: " Giulia ",
     email: " GIULIA@EXAMPLE.COM ",
     password: " una frase molto lunga ",
+    ageConsent: "on",
   });
   expect(data).toEqual({
     name: "Giulia Rossi",
     username: "giulia",
     email: "giulia@example.com",
     password: " una frase molto lunga ",
+    ageConsent: "on",
   });
+});
+it("rejects registration without confirming the age/terms checkbox", () => {
+  expect(
+    registerSchema.safeParse({
+      name: "Giulia",
+      username: "giulia",
+      email: "giulia@example.com",
+      password: "una frase molto lunga",
+    }).success,
+  ).toBe(false);
 });
 it.each(["admin", "x", "a/b", "a b", "1username", "a<script>"])(
   "rejects invalid username %s",

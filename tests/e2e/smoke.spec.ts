@@ -14,6 +14,7 @@ test("percorso critico: registrazione, login, post, like, logout", async ({
   await page.locator('input[name="username"]').fill(username);
   await page.locator('input[name="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
+  await page.locator('input[name="ageConsent"]').check();
   await page.getByRole("button", { name: /crea il tuo profilo/i }).click();
   await expect(page).toHaveURL(/\/login/);
 
