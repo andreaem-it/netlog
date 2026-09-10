@@ -39,7 +39,11 @@ export function ReportButton(
     );
 
   return (
-    <form action={formAction} className="form-stack">
+    <form
+      action={formAction}
+      className="form-stack"
+      style={{ flexBasis: "100%" }}
+    >
       {props.target === "post" ? (
         <input type="hidden" name="postId" value={props.postId} />
       ) : (
