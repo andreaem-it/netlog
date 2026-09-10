@@ -21,6 +21,20 @@ import {
   searchProfiles,
 } from "@/features/profiles/queries";
 import { applyProfileMedia, updateOwnProfile } from "@/features/profiles/service";
+import {
+  blockUser,
+  cancelFriendRequest,
+  removeFriendship,
+  respondToFriendRequest,
+  sendFriendRequest,
+  unblockUser,
+} from "@/features/friends/service";
+import {
+  getRelationship,
+  listBlockedUsers,
+  listFriends,
+  listPendingRequests,
+} from "@/features/friends/queries";
 import { orderedPair } from "@/features/profiles/policy";
 import { validateSession } from "@/server/authorization/validate-session";
 import { consumeRateLimit } from "@/server/security/rate-limit";
@@ -290,6 +304,90 @@ describe("identity and authorization on PostgreSQL", () => {
     });
     expect(profileAfterSecond.avatarId).toBe(second.assetId);
     expect(profileAfterSecond.coverId).toBeNull();
+  });
+  it("accepts instantly when a reverse request is already pending", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    await sendFriendRequest(b.id, "giulia");
+    expect(await getRelationship(a.id, "marco")).toEqual({ kind: "friends" });
+    expect(await db.friendRequest.count({ where: { status: "PENDING" } })).toBe(0);
+  });
+  it("never ends up with both a friendship and a duplicate pending request under concurrency", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const outcomes = await Promise.allSettled([
+      sendFriendRequest(a.id, "marco"),
+      sendFriendRequest(b.id, "giulia"),
+    ]);
+    expect(outcomes.some((r) => r.status === "fulfilled")).toBe(true);
+    const friendships = await db.friendship.count();
+    const pending = await db.friendRequest.count({ where: { status: "PENDING" } });
+    // Either they're already friends, or exactly one pending request survives.
+    expect(friendships + pending).toBe(1);
+  });
+  it("rejects duplicate pending requests and self/blocked targets", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    await expect(sendFriendRequest(a.id, "marco")).rejects.toThrow();
+    await expect(sendFriendRequest(a.id, "giulia")).rejects.toThrow();
+    await db.block.create({ data: { blockerId: b.id, blockedId: a.id } });
+    await expect(sendFriendRequest(a.id, "marco")).rejects.toThrow();
+  });
+  it("accepts, rejects and cancels friend requests", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    await sendFriendRequest(a.id, "marco");
+    let pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    expect(await getRelationship(a.id, "marco")).toEqual({ kind: "friends" });
+    expect((await listFriends(a.id)).friends).toHaveLength(1);
+
+    await sendFriendRequest(a.id, "sofia");
+    pending = await listPendingRequests(c.id);
+    await respondToFriendRequest(c.id, pending.incoming[0]!.requestId, false);
+    expect(await getRelationship(a.id, "sofia")).toEqual({ kind: "none" });
+
+    await sendFriendRequest(c.id, "giulia");
+    const outgoing = await listPendingRequests(c.id);
+    await cancelFriendRequest(c.id, outgoing.outgoing[0]!.requestId);
+    expect(await getRelationship(a.id, "sofia")).toEqual({ kind: "none" });
+  });
+  it("blocking removes the friendship and cancels pending requests both ways", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await account("sofia");
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    await sendFriendRequest(a.id, "sofia");
+
+    await blockUser(a.id, "marco");
+    expect(await db.friendship.count()).toBe(0);
+    expect((await listBlockedUsers(a.id)).map((p) => p.username)).toEqual([
+      "marco",
+    ]);
+    // The unrelated pending request to sofia is untouched by blocking marco.
+    expect(await getRelationship(a.id, "sofia")).toEqual({
+      kind: "pending_outgoing",
+      requestId: expect.any(String),
+    });
+
+    await unblockUser(a.id, "marco");
+    expect(await listBlockedUsers(a.id)).toEqual([]);
+    expect(await getRelationship(a.id, "marco")).toEqual({ kind: "none" });
+  });
+  it("removes a friendship in either direction", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    await removeFriendship(b.id, "giulia");
+    expect(await db.friendship.count()).toBe(0);
+    expect(await getRelationship(a.id, "marco")).toEqual({ kind: "none" });
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

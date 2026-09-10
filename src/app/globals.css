@@ -131,6 +131,10 @@ h3 {
 .button-primary:hover {
   background: var(--accent-dark);
 }
+.button-danger {
+  color: #b3261e;
+  border-color: #f2c6c2;
+}
 .button-subtle {
   background: transparent;
 }
