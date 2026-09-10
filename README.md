@@ -147,6 +147,6 @@ Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "so
 4. **In parte completata:** post testuali, like, commenti e feed cronologico in home, con la stessa policy di visibilità/blocchi dei profili. Le immagini nei post restano da fare (riusano lo stesso backend di storage di avatar/copertina, ma serve legare l'upload al post prima di crearlo).
 5. **Completata:** notifiche, visite al profilo su consenso con finestra mobile, conservazione dati (`pnpm db:cleanup` ora purga anche visite oltre 30 giorni e notifiche lette oltre 90 giorni).
 6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling.
-7. Hardening, suite E2E automatizzata, misure delle query, backup/ripristino e deploy.
+7. **Completata:** hardening (header di sicurezza già presenti, verificati), suite E2E automatizzata (`pnpm test:e2e`), misure delle query (indici già coperti, documentati in "Misure delle query"), backup/ripristino (PITR nativo di Neon, documentato) e deploy (già in produzione su Vercel dalle milestone precedenti).
 
 Prima della beta pubblica restano inoltre verifica email, segnalazioni/moderazione, cancellazione account, policy per età/privacy/conservazione, configurazione SMTP/storage e controllo delle dipendenze. Nessun deploy pubblico è stato eseguito.
