@@ -33,7 +33,12 @@ export default async function ProfilePage({
       </div>
       <ProfileCard profile={profile} />
       {user && !profile.owner && (
-        <FriendshipActions viewerId={user.id} username={profile.username} />
+        <div className="button-row">
+          <FriendshipActions viewerId={user.id} username={profile.username} />
+          <Link href={`/messaggi/${profile.username}`} className="button">
+            Manda un messaggio
+          </Link>
+        </div>
       )}
       {visitors.length > 0 && (
         <section className="card card-body stack">

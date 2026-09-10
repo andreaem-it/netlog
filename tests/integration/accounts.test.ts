@@ -33,6 +33,12 @@ import { getUnreadNotificationCount, listNotifications } from "@/features/notifi
 import { markAllNotificationsRead } from "@/features/notifications/service";
 import { recordProfileView } from "@/features/visits/service";
 import { listVisitors } from "@/features/visits/queries";
+import { MessageActionError, markConversationRead, sendMessage } from "@/features/messages/service";
+import {
+  getConversationWithUsername,
+  getMessages,
+  listConversations,
+} from "@/features/messages/queries";
 import {
   blockUser,
   cancelFriendRequest,
@@ -508,6 +514,62 @@ describe("identity and authorization on PostgreSQL", () => {
     await recordProfileView(b.id, "giulia");
     expect(await listVisitors(a.id)).toMatchObject([{ username: "marco" }]);
     expect(await getUnreadNotificationCount(a.id)).toBe(1);
+  });
+  it("sends messages by default only between friends, is idempotent per clientId, and tracks unread counts", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const clientId = randomUUID();
+    await expect(
+      sendMessage(a.id, "marco", { body: "ciao", clientId }),
+    ).rejects.toThrow(MessageActionError);
+
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+
+    const first = await sendMessage(a.id, "marco", { body: "ciao", clientId });
+    const retry = await sendMessage(a.id, "marco", { body: "ciao", clientId });
+    expect(retry.messageId).toBe(first.messageId);
+    expect(await getMessages(first.conversationId)).toHaveLength(1);
+
+    const bConvos = await listConversations(b.id);
+    expect(bConvos).toMatchObject([{ unreadCount: 1, otherUsername: "giulia" }]);
+    await markConversationRead(b.id, first.conversationId);
+    expect((await listConversations(b.id))[0]!.unreadCount).toBe(0);
+
+    const found = await getConversationWithUsername(b.id, "giulia");
+    expect(found?.conversationId).toBe(first.conversationId);
+  });
+  it("respects EVERYONE and NOBODY message permission and blocks", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    await updateOwnProfile(b, {
+      name: "marco",
+      bio: "",
+      city: "",
+      visibility: "PUBLIC",
+      messagePermission: "EVERYONE",
+    });
+    await expect(
+      sendMessage(a.id, "marco", { body: "ciao", clientId: randomUUID() }),
+    ).resolves.toMatchObject({});
+
+    await updateOwnProfile(c, {
+      name: "sofia",
+      bio: "",
+      city: "",
+      visibility: "PUBLIC",
+      messagePermission: "NOBODY",
+    });
+    await expect(
+      sendMessage(a.id, "sofia", { body: "ciao", clientId: randomUUID() }),
+    ).rejects.toThrow(MessageActionError);
+
+    await db.block.create({ data: { blockerId: b.id, blockedId: a.id } });
+    await expect(
+      sendMessage(a.id, "marco", { body: "ancora ciao", clientId: randomUUID() }),
+    ).rejects.toThrow(MessageActionError);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

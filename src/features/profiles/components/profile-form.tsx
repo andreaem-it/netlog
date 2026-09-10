@@ -12,6 +12,7 @@ export function ProfileForm({
     city: string | null;
     birthDate: Date | null;
     visibility: string;
+    messagePermission: string;
     recordVisits: boolean;
     showVisitors: boolean;
     notifyVisits: boolean;
@@ -30,6 +31,9 @@ export function ProfileForm({
     profile.birthDate ? profile.birthDate.toISOString().slice(0, 10) : "",
   );
   const [visibility, setVisibility] = useState(profile.visibility);
+  const [messagePermission, setMessagePermission] = useState(
+    profile.messagePermission,
+  );
   const [recordVisits, setRecordVisits] = useState(profile.recordVisits);
   const [showVisitors, setShowVisitors] = useState(profile.showVisitors);
   const [notifyVisits, setNotifyVisits] = useState(profile.notifyVisits);
@@ -93,6 +97,18 @@ export function ProfileForm({
         <span className="field-hint">
           La tua email non viene mai mostrata nel profilo.
         </span>
+      </label>
+      <label>
+        Chi può scriverti un messaggio?
+        <select
+          name="messagePermission"
+          value={messagePermission}
+          onChange={(event) => setMessagePermission(event.target.value)}
+        >
+          <option value="FRIENDS">Solo amici</option>
+          <option value="EVERYONE">Tutti</option>
+          <option value="NOBODY">Nessuno</option>
+        </select>
       </label>
       <label>
         <input

@@ -19,7 +19,7 @@ export function Navigation({ username }: { username: string }) {
         { label: "Home", href: "/home", icon: House },
         { label: "Persone", href: "/persone", icon: Users },
         { label: "Amici", href: "/amici", icon: HeartHandshake },
-        { label: "Messaggi", icon: MessageCircle },
+        { label: "Messaggi", href: "/messaggi", icon: MessageCircle },
         { label: "Notifiche", href: "/notifiche", icon: Bell },
         { label: "Il mio profilo", href: `/u/${username}`, icon: UserRound },
         { label: "Impostazioni", href: "/settings", icon: Settings2 },

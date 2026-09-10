@@ -14,6 +14,7 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 - Post testuali con visibilità pubblico/solo amici/privato, like e commenti, feed cronologico in home (post propri + amici + pubblici, esclusi gli utenti bloccati). Le immagini nei post non sono ancora supportate.
 - Notifiche (richiesta di amicizia, accettazione, like, commento, visita profilo) su `/notifiche`, con segna-tutte-come-lette.
 - Visite al profilo su base di consenso esplicito: disattivate di default, l'utente deve attivarle dalle impostazioni. Finestra mobile di 24h per evitare notifiche/registrazioni duplicate dallo stesso visitatore; elenco visitatori (opzionale) limitato agli ultimi 30 giorni.
+- Messaggi privati 1:1 su `/messaggi`, con permesso configurabile (amici/tutti/nessuno), invio idempotente (stesso `clientId` non duplica un messaggio in caso di doppio submit o retry), conteggio dei non letti e aggiornamento della conversazione tramite polling ogni 5 secondi.
 - Query dei profili già compatibili con amicizie e blocchi; queste relazioni hanno schema e test, ma non ancora interfaccia o servizi di gestione.
 - Schema Prisma dell'intero MVP, migrazioni SQL con vincoli, seed di 20 utenti, test unitari e integrazione PostgreSQL.
 
@@ -125,7 +126,7 @@ Le migrazioni contengono anche vincoli CHECK, un indice parziale sulle richieste
 3. **Completata:** amicizie, richieste (con auto-accettazione se incrociate), blocchi, privacy e autorizzazioni concorrenti demandate ai vincoli PostgreSQL (indice parziale sulle richieste pendenti, vincolo unico sulle amicizie).
 4. **In parte completata:** post testuali, like, commenti e feed cronologico in home, con la stessa policy di visibilità/blocchi dei profili. Le immagini nei post restano da fare (riusano lo stesso backend di storage di avatar/copertina, ma serve legare l'upload al post prima di crearlo).
 5. **Completata:** notifiche, visite al profilo su consenso con finestra mobile, conservazione dati (`pnpm db:cleanup` ora purga anche visite oltre 30 giorni e notifiche lette oltre 90 giorni).
-6. Messaggi individuali, non letti e polling.
+6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling.
 7. Hardening, suite E2E automatizzata, misure delle query, backup/ripristino e deploy.
 
 Prima della beta pubblica restano inoltre verifica email, segnalazioni/moderazione, cancellazione account, policy per età/privacy/conservazione, configurazione SMTP/storage e controllo delle dipendenze. Nessun deploy pubblico è stato eseguito.

@@ -93,6 +93,7 @@ export const editProfileSchema = z.object({
   city: z.string().trim().max(80),
   birthDate: birthDateSchema,
   visibility: z.enum(["PUBLIC", "PRIVATE"]),
+  messagePermission: z.enum(["FRIENDS", "EVERYONE", "NOBODY"]).default("FRIENDS"),
   recordVisits: checkboxSchema,
   showVisitors: checkboxSchema,
   notifyVisits: checkboxSchema,

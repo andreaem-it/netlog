@@ -15,6 +15,7 @@ export async function updateOwnProfile(actor: { id: string }, input: unknown) {
           city: data.city || null,
           birthDate: data.birthDate ?? null,
           visibility: data.visibility,
+          messagePermission: data.messagePermission,
           recordVisits: data.recordVisits,
           showVisitors: data.showVisitors,
           notifyVisits: data.notifyVisits,
