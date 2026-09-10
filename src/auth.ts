@@ -43,9 +43,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   logger: {
-    error(error) {
-      // ponytail: temporary diagnostic, revert once login failure cause confirmed
-      console.error("authentication_failed", error.name, error.message, error.cause);
+    error() {
+      console.error("authentication_failed");
     },
   },
 });
