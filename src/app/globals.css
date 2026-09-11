@@ -298,7 +298,7 @@ h3 {
   font-size: 0.875rem;
   font-weight: 600;
 }
-.form-stack input:not([type="hidden"]),
+.form-stack input:not([type="hidden"]):not([type="checkbox"]),
 .form-stack textarea,
 .form-stack select {
   width: 100%;
@@ -308,6 +308,17 @@ h3 {
   min-height: 48px;
   padding: 11px 13px;
   color: var(--ink);
+}
+.form-stack label:has(> input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-weight: 400;
+}
+.form-stack input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 .form-stack textarea {
   resize: vertical;
