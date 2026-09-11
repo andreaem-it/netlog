@@ -95,6 +95,7 @@ model User {
   reportsFiled         Report[]                  @relation("ReportsFiled")
   reportsReceived      Report[]                  @relation("ReportsReceived")
   pushSubscriptions    PushSubscription[]
+  albums               Album[]
 
   @@index([createdAt, id])
   @@map("users")
@@ -240,6 +241,7 @@ model MediaAsset {
   avatars    Profile[]   @relation("ProfileAvatar")
   covers     Profile[]   @relation("ProfileCover")
   postImages PostImage[]
+  albumPhoto AlbumPhoto?
 
   @@index([ownerId, createdAt, id])
   @@map("media_assets")
@@ -446,4 +448,29 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+model Album {
+  id        String       @id @default(uuid()) @db.Uuid
+  ownerId   String       @map("owner_id") @db.Uuid
+  title     String       @db.VarChar(80)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  owner     User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  photos    AlbumPhoto[]
+
+  @@index([ownerId, createdAt])
+  @@map("albums")
+}
+
+model AlbumPhoto {
+  id        String     @id @default(uuid()) @db.Uuid
+  albumId   String     @map("album_id") @db.Uuid
+  assetId   String     @unique @map("asset_id") @db.Uuid
+  position  Int
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  album     Album      @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  asset     MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, position])
+  @@map("album_photos")
 }

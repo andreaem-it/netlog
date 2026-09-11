@@ -152,6 +152,7 @@ Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "so
 5. **Completata:** notifiche, visite al profilo su consenso con finestra mobile, conservazione dati (`pnpm db:cleanup` ora purga anche visite oltre 30 giorni e notifiche lette oltre 90 giorni).
 6. **Completata:** messaggi 1:1 e di gruppo (solo tra amici), permesso configurabile, invio idempotente, non letti, polling, stato online e indicatore "sta scrivendo" (opt-in via impostazioni privacy), notifiche push via Web Push (richiede `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` in produzione, vedi sotto).
 7. **Completata:** hardening (header di sicurezza già presenti, verificati), suite E2E automatizzata (`pnpm test:e2e`), misure delle query (indici già coperti, documentati in "Misure delle query"), backup/ripristino (PITR nativo di Neon, documentato) e deploy (già in produzione su Vercel dalle milestone precedenti).
+8. **Completata:** album fotografici (`/album`), visibili alla stessa audience del profilo del proprietario (pubblico/amici/privato), gestione foto (aggiungi/rimuovi) e rinomina riservate al proprietario.
 
 Prima della beta pubblica restano inoltre configurazione SMTP effettiva, `ADMIN_EMAILS` da impostare in produzione (senza, nessuno può accedere a `/moderazione`), le chiavi VAPID per le notifiche push (vedi sotto) e aggiornamento delle dipendenze major disponibili (verificato con `pnpm audit`: nessuna vulnerabilità nota al 2026-09-10). Nessun deploy pubblico è stato eseguito.
 

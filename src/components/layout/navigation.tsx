@@ -10,6 +10,7 @@ import {
   UserRound,
   Settings2,
   ShieldAlert,
+  Images,
 } from "lucide-react";
 
 export function Navigation({
@@ -27,6 +28,7 @@ export function Navigation({
         { label: "Persone", href: "/persone", icon: Users },
         { label: "Amici", href: "/amici", icon: HeartHandshake },
         { label: "Messaggi", href: "/messaggi", icon: MessageCircle },
+        { label: "Album", href: "/album", icon: Images },
         { label: "Notifiche", href: "/notifiche", icon: Bell },
         { label: "Il mio profilo", href: `/u/${username}`, icon: UserRound },
         { label: "Impostazioni", href: "/settings", icon: Settings2 },

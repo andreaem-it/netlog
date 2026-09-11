@@ -6,6 +6,7 @@ import { ProfileCard } from "@/features/profiles/components/profile-card";
 import { FriendshipActions } from "@/features/friends/components/friendship-actions";
 import { recordProfileView } from "@/features/visits/service";
 import { listVisitors } from "@/features/visits/queries";
+import { listVisibleAlbums } from "@/features/albums/queries";
 import { AppShell } from "@/components/layout/app-shell";
 import { Brand } from "@/components/ui/brand";
 import { ReportButton } from "@/features/reports/components/report-button";
@@ -22,6 +23,7 @@ export default async function ProfilePage({
   if (user && !profile.owner)
     await recordProfileView(user.id, profile.username);
   const visitors = profile.owner ? await listVisitors(user!.id) : [];
+  const albums = user ? await listVisibleAlbums(profile.username, user.id) : null;
   const content = (
     <>
       <div className="page-title">
@@ -41,6 +43,45 @@ export default async function ProfilePage({
           </Link>
           <ReportButton target="profile" username={profile.username} />
         </div>
+      )}
+      {profile.owner && albums && albums.length === 0 && (
+        <section className="card card-body">
+          <p className="muted">
+            Non hai ancora album. <Link href="/album">Creane uno</Link>.
+          </p>
+        </section>
+      )}
+      {albums && albums.length > 0 && (
+        <section className="card card-body stack">
+          <div className="section-heading">
+            <h2>Album</h2>
+            {profile.owner && (
+              <Link href="/album" className="text-link">
+                Gestisci
+              </Link>
+            )}
+          </div>
+          <div
+            className="content-columns"
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))" }}
+          >
+            {albums.map((album) => (
+              <Link key={album.id} href={`/album/${album.id}`} className="card stack" style={{ gap: 0 }}>
+                {album.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- plain <img>: app doesn't use next/image elsewhere.
+                  <img
+                    src={album.coverUrl}
+                    alt=""
+                    style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: "16px 16px 0 0" }}
+                  />
+                ) : (
+                  <div style={{ width: "100%", height: 100, background: "var(--soft)", borderRadius: "16px 16px 0 0" }} />
+                )}
+                <strong style={{ padding: 8 }}>{album.title}</strong>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
       {visitors.length > 0 && (
         <section className="card card-body stack">

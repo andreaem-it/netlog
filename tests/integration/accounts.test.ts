@@ -73,6 +73,15 @@ import {
   unblockUser,
 } from "@/features/friends/service";
 import {
+  AlbumActionError,
+  addPhotosToAlbum,
+  createAlbum,
+  deleteAlbum,
+  deletePhoto,
+  renameAlbum,
+} from "@/features/albums/service";
+import { getAlbum, listOwnAlbums, listVisibleAlbums } from "@/features/albums/queries";
+import {
   getRelationship,
   listBlockedUsers,
   listFriends,
@@ -94,6 +103,21 @@ async function account(username: string) {
     },
     randomUUID(),
   );
+}
+async function readyAsset(ownerId: string) {
+  const asset = await db.mediaAsset.create({
+    data: {
+      ownerId,
+      storageKey: `https://blob.test/${randomUUID()}.jpg`,
+      mimeType: "image/jpeg",
+      size: 1024,
+      width: 800,
+      height: 600,
+      status: "READY",
+    },
+    select: { id: true },
+  });
+  return asset.id;
 }
 beforeEach(async () => {
   if (!new URL(process.env.DATABASE_URL!).pathname.endsWith("/social_test"))
@@ -930,6 +954,68 @@ describe("identity and authorization on PostgreSQL", () => {
     await expect(moderationSuspendUser(target.id)).rejects.toThrow(
       ReportActionError,
     );
+  });
+  it("creates an album, manages its photos, and only the owner can", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const asset1 = await readyAsset(a.id);
+    const asset2 = await readyAsset(a.id);
+    const album = await createAlbum(a.id, {
+      title: "Vacanze",
+      assetIds: JSON.stringify([asset1, asset2]),
+    });
+    expect(await listOwnAlbums(a.id)).toMatchObject([{ title: "Vacanze", photoCount: 2 }]);
+
+    // Someone else's assets can't be smuggled into your own album.
+    const foreignAsset = await readyAsset(b.id);
+    await expect(
+      addPhotosToAlbum(a.id, album.id, { assetIds: JSON.stringify([foreignAsset]) }),
+    ).rejects.toThrow(AlbumActionError);
+
+    const asset3 = await readyAsset(a.id);
+    await addPhotosToAlbum(a.id, album.id, { assetIds: JSON.stringify([asset3]) });
+    expect((await getAlbum(a.id, album.id))?.photos).toHaveLength(3);
+
+    // Only the owner can rename, delete a photo, or delete the album.
+    await expect(
+      renameAlbum(b.id, album.id, { title: "Non tue" }),
+    ).rejects.toThrow(AlbumActionError);
+    await renameAlbum(a.id, album.id, { title: "Vacanze 2026" });
+    expect((await getAlbum(a.id, album.id))?.title).toBe("Vacanze 2026");
+
+    const photos = (await getAlbum(a.id, album.id))!.photos;
+    await expect(
+      deletePhoto(b.id, album.id, photos[0]!.id),
+    ).rejects.toThrow(AlbumActionError);
+    await deletePhoto(a.id, album.id, photos[0]!.id);
+    expect(await db.mediaAsset.findUnique({ where: { id: asset1 } })).toBeNull();
+    expect((await getAlbum(a.id, album.id))?.photos).toHaveLength(2);
+
+    await expect(deleteAlbum(b.id, album.id)).rejects.toThrow(AlbumActionError);
+    await deleteAlbum(a.id, album.id);
+    expect(await getAlbum(a.id, album.id)).toBeNull();
+    // Deleting the album also cleans up the remaining MediaAsset rows.
+    expect(await db.mediaAsset.findUnique({ where: { id: asset2 } })).toBeNull();
+  });
+  it("shows albums to the same audience as the owner's profile visibility", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    // FRIENDS visibility is a valid Profile.visibility value at the data
+    // layer (canReadProfile handles it) even though the settings form only
+    // exposes PUBLIC/PRIVATE — set it directly to exercise that path.
+    await db.profile.update({ where: { userId: a.id }, data: { visibility: "FRIENDS" } });
+    const asset = await readyAsset(a.id);
+    await createAlbum(a.id, { title: "Privato-ish", assetIds: JSON.stringify([asset]) });
+
+    // Not a friend: album invisible, same as the profile itself.
+    expect(await listVisibleAlbums("giulia", c.id)).toBeNull();
+    expect(await getAlbum(c.id, (await listOwnAlbums(a.id))[0]!.id)).toBeNull();
+
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    expect(await listVisibleAlbums("giulia", b.id)).toMatchObject([{ title: "Privato-ish" }]);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

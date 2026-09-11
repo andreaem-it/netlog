@@ -13,7 +13,7 @@ import {
 } from "@/features/profiles/media";
 
 const clientMetaSchema = z.object({
-  kind: z.enum(["avatar", "cover", "post"]),
+  kind: z.enum(["avatar", "cover", "post", "album"]),
   // ponytail: sanity bound, not a real constraint — file size (5MB) already caps the payload.
   // Raised from 8000 after a real high-res phone photo (>8000px) was rejected.
   width: z.number().int().positive().max(20000),
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         if (!user) throw new Error("Devi accedere per caricare un'immagine.");
         await consumeRateLimit("media-upload", user.id, 20, 3600);
         const meta = clientMetaSchema.parse(JSON.parse(clientPayload ?? "{}"));
-        if (meta.kind === "post" && !meta.assetId)
+        if ((meta.kind === "post" || meta.kind === "album") && !meta.assetId)
           throw new Error("Richiesta non valida.");
         return {
           allowedContentTypes: AVATAR_COVER_MIME_TYPES,
@@ -50,9 +50,10 @@ export async function POST(request: Request) {
         if (!tokenPayload) return;
         const { userId, kind, width, height, size, assetId } =
           tokenPayloadSchema.parse(JSON.parse(tokenPayload));
-        if (kind === "post") {
-          // Unattached until the post is created (createPost links it via
-          // its client-generated id); no profile/post target exists yet.
+        if (kind === "post" || kind === "album") {
+          // Unattached until the post/album is created or the photo is
+          // attached (both link it via its client-generated id); no
+          // profile/post/album target exists yet.
           await db.mediaAsset.create({
             data: {
               id: assetId,
