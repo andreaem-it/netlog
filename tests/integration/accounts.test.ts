@@ -46,7 +46,7 @@ import { getUnreadNotificationCount, listNotifications } from "@/features/notifi
 import { markAllNotificationsRead } from "@/features/notifications/service";
 import { recordProfileView } from "@/features/visits/service";
 import { listVisitors } from "@/features/visits/queries";
-import { MessageActionError, markConversationRead, sendMessage } from "@/features/messages/service";
+import { MessageActionError, markConversationRead, sendMessage, setTyping } from "@/features/messages/service";
 import {
   getConversationWithUsername,
   getMessages,
@@ -589,6 +589,45 @@ describe("identity and authorization on PostgreSQL", () => {
     await expect(
       sendMessage(a.id, "marco", { body: "ancora ciao", clientId: randomUUID() }),
     ).rejects.toThrow(MessageActionError);
+  });
+  it("shows online/typing status only when the other user opted in via showOnline", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    const { conversationId } = await sendMessage(a.id, "marco", {
+      body: "ciao",
+      clientId: randomUUID(),
+    });
+    await setTyping(b.id, conversationId);
+
+    // b never enabled showOnline: a sees neither online nor typing.
+    let conversation = await getConversationWithUsername(a.id, "marco");
+    expect(conversation).toMatchObject({ otherOnline: false, otherTyping: false });
+    let list = await listConversations(a.id);
+    expect(list).toMatchObject([{ otherOnline: false }]);
+
+    await updateOwnProfile(b, {
+      name: "marco",
+      bio: "",
+      city: "",
+      visibility: "PUBLIC",
+      showOnline: "on",
+    });
+    await db.user.update({ where: { id: b.id }, data: { lastSeenAt: new Date() } });
+    conversation = await getConversationWithUsername(a.id, "marco");
+    expect(conversation).toMatchObject({ otherOnline: true, otherTyping: true });
+    list = await listConversations(a.id);
+    expect(list).toMatchObject([{ otherOnline: true }]);
+
+    // The typing flag expires; a stale one must not still read as typing.
+    await db.conversationParticipant.updateMany({
+      where: { conversationId, userId: b.id },
+      data: { typingUntil: new Date(Date.now() - 1000) },
+    });
+    conversation = await getConversationWithUsername(a.id, "marco");
+    expect(conversation).toMatchObject({ otherOnline: true, otherTyping: false });
   });
   it("verifies an email once under concurrency and rejects expired or reused tokens", async () => {
     const user = await account("giulia");
