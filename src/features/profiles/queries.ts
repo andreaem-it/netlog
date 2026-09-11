@@ -73,6 +73,7 @@ export async function getOwnProfile(userId: string) {
       recordVisits: true,
       showVisitors: true,
       notifyVisits: true,
+      showOnline: true,
       avatar: { select: { storageKey: true } },
       cover: { select: { storageKey: true } },
       user: { select: { name: true } },
@@ -90,6 +91,7 @@ export async function getOwnProfile(userId: string) {
     recordVisits: profile.recordVisits,
     showVisitors: profile.showVisitors,
     notifyVisits: profile.notifyVisits,
+    showOnline: profile.showOnline,
     avatarUrl: profile.avatar?.storageKey ?? null,
     coverUrl: profile.cover?.storageKey ?? null,
   };

@@ -150,7 +150,7 @@ Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "so
 3. **Completata:** amicizie, richieste (con auto-accettazione se incrociate), blocchi, privacy e autorizzazioni concorrenti demandate ai vincoli PostgreSQL (indice parziale sulle richieste pendenti, vincolo unico sulle amicizie).
 4. **Completata:** post con testo e/o foto (fino a 4, no video), like, commenti e feed cronologico in home, con la stessa policy di visibilità/blocchi dei profili.
 5. **Completata:** notifiche, visite al profilo su consenso con finestra mobile, conservazione dati (`pnpm db:cleanup` ora purga anche visite oltre 30 giorni e notifiche lette oltre 90 giorni).
-6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling.
+6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling, stato online e indicatore "sta scrivendo" (opt-in via impostazioni privacy).
 7. **Completata:** hardening (header di sicurezza già presenti, verificati), suite E2E automatizzata (`pnpm test:e2e`), misure delle query (indici già coperti, documentati in "Misure delle query"), backup/ripristino (PITR nativo di Neon, documentato) e deploy (già in produzione su Vercel dalle milestone precedenti).
 
 Prima della beta pubblica restano inoltre configurazione SMTP effettiva, `ADMIN_EMAILS` da impostare in produzione (senza, nessuno può accedere a `/moderazione`) e aggiornamento delle dipendenze major disponibili (verificato con `pnpm audit`: nessuna vulnerabilità nota al 2026-09-10). Nessun deploy pubblico è stato eseguito.

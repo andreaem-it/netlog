@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/server/authorization/session";
 import { listConversations } from "@/features/messages/queries";
+import { PresenceHeartbeat } from "@/features/messages/components/presence-heartbeat";
 
 export const metadata = { title: "Messaggi" };
 
@@ -9,6 +10,7 @@ export default async function MessaggiPage() {
   const conversations = await listConversations(user.id);
   return (
     <>
+      <PresenceHeartbeat />
       <div className="page-title">
         <div>
           <p className="eyebrow">LE TUE CONVERSAZIONI</p>
@@ -32,6 +34,9 @@ export default async function MessaggiPage() {
             >
               <span>
                 <strong>{conversation.otherName}</strong>
+                {conversation.otherOnline && (
+                  <span className="online-dot" aria-hidden="true" />
+                )}
                 <br />
                 <span className="muted">{conversation.lastMessage}</span>
               </span>

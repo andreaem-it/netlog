@@ -19,6 +19,7 @@ export async function updateOwnProfile(actor: { id: string }, input: unknown) {
           recordVisits: data.recordVisits,
           showVisitors: data.showVisitors,
           notifyVisits: data.notifyVisits,
+          showOnline: data.showOnline,
         },
       },
     },

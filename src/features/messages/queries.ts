@@ -1,6 +1,14 @@
 import "server-only";
 import { db } from "@/server/db/client";
 
+// A user counts as online if their presence heartbeat (sent every ~10s while
+// the messages section is open) landed within this window.
+const ONLINE_WINDOW_MS = 20_000;
+
+function isOnline(lastSeenAt: Date | null) {
+  return Boolean(lastSeenAt && Date.now() - lastSeenAt.getTime() < ONLINE_WINDOW_MS);
+}
+
 export async function listConversations(userId: string) {
   const participations = await db.conversationParticipant.findMany({
     where: { userId, archivedAt: null },
@@ -13,10 +21,18 @@ export async function listConversations(userId: string) {
           userHighId: true,
           lastMessageAt: true,
           userLow: {
-            select: { name: true, profile: { select: { username: true } } },
+            select: {
+              name: true,
+              lastSeenAt: true,
+              profile: { select: { username: true, showOnline: true } },
+            },
           },
           userHigh: {
-            select: { name: true, profile: { select: { username: true } } },
+            select: {
+              name: true,
+              lastSeenAt: true,
+              profile: { select: { username: true, showOnline: true } },
+            },
           },
           messages: {
             orderBy: { createdAt: "desc" },
@@ -60,6 +76,7 @@ export async function listConversations(userId: string) {
         conversationId: p.conversation.id,
         otherName: other.name,
         otherUsername: other.profile?.username ?? "",
+        otherOnline: other.profile?.showOnline ? isOnline(other.lastSeenAt) : false,
         lastMessage: p.conversation.messages[0]!.body,
         lastMessageAt: p.conversation.messages[0]!.createdAt,
         unreadCount,
@@ -84,7 +101,12 @@ export async function getConversationWithUsername(
 ) {
   const other = await db.user.findFirst({
     where: { profile: { username: otherUsername } },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      lastSeenAt: true,
+      profile: { select: { showOnline: true } },
+    },
   });
   if (!other) return null;
   const conversation = await db.conversationParticipant.findFirst({
@@ -99,7 +121,28 @@ export async function getConversationWithUsername(
     },
     select: { conversationId: true },
   });
-  return { otherId: other.id, otherName: other.name, conversationId: conversation?.conversationId ?? null };
+  let otherTyping = false;
+  if (other.profile?.showOnline && conversation) {
+    const participant = await db.conversationParticipant.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId: conversation.conversationId,
+          userId: other.id,
+        },
+      },
+      select: { typingUntil: true },
+    });
+    otherTyping = Boolean(
+      participant?.typingUntil && participant.typingUntil.getTime() > Date.now(),
+    );
+  }
+  return {
+    otherId: other.id,
+    otherName: other.name,
+    conversationId: conversation?.conversationId ?? null,
+    otherOnline: other.profile?.showOnline ? isOnline(other.lastSeenAt) : false,
+    otherTyping,
+  };
 }
 
 export async function getMessages(conversationId: string) {

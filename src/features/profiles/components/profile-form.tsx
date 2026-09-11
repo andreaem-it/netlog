@@ -16,6 +16,7 @@ export function ProfileForm({
     recordVisits: boolean;
     showVisitors: boolean;
     notifyVisits: boolean;
+    showOnline: boolean;
   };
 }) {
   const [state, action, pending] = useActionState(
@@ -37,6 +38,7 @@ export function ProfileForm({
   const [recordVisits, setRecordVisits] = useState(profile.recordVisits);
   const [showVisitors, setShowVisitors] = useState(profile.showVisitors);
   const [notifyVisits, setNotifyVisits] = useState(profile.notifyVisits);
+  const [showOnline, setShowOnline] = useState(profile.showOnline);
   return (
     <form action={action} className="form-stack">
       <label>
@@ -109,6 +111,15 @@ export function ProfileForm({
           <option value="EVERYONE">Tutti</option>
           <option value="NOBODY">Nessuno</option>
         </select>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          name="showOnline"
+          checked={showOnline}
+          onChange={(event) => setShowOnline(event.target.checked)}
+        />{" "}
+        Mostra agli amici quando sono online e quando sto scrivendo
       </label>
       <label>
         <input

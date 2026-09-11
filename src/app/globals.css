@@ -467,6 +467,15 @@ h3 {
   cursor: pointer;
   padding: 0;
 }
+.online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2fb35e;
+  margin-left: 8px;
+  vertical-align: middle;
+}
 .skeleton-round {
   width: 42px;
   height: 42px;

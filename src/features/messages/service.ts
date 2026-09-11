@@ -112,6 +112,15 @@ export async function sendMessage(
   return result;
 }
 
+const TYPING_WINDOW_MS = 6_000;
+
+export async function setTyping(actorId: string, conversationId: string) {
+  await db.conversationParticipant.updateMany({
+    where: { conversationId, userId: actorId },
+    data: { typingUntil: new Date(Date.now() + TYPING_WINDOW_MS) },
+  });
+}
+
 export async function markConversationRead(actorId: string, conversationId: string) {
   const lastMessage = await db.message.findFirst({
     where: { conversationId },

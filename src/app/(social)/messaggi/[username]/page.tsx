@@ -7,6 +7,7 @@ import {
 import { markConversationRead } from "@/features/messages/service";
 import { MessageComposer } from "@/features/messages/components/message-composer";
 import { ThreadPolling } from "@/features/messages/components/thread-polling";
+import { PresenceHeartbeat } from "@/features/messages/components/presence-heartbeat";
 
 export const metadata = { title: "Conversazione" };
 
@@ -27,10 +28,18 @@ export default async function ConversationPage({
   return (
     <>
       <ThreadPolling />
+      <PresenceHeartbeat />
       <div className="page-title">
         <div>
           <p className="eyebrow">CONVERSAZIONE</p>
           <h1>{conversation.otherName}</h1>
+          {conversation.otherTyping ? (
+            <p className="muted">Sta scrivendo…</p>
+          ) : conversation.otherOnline ? (
+            <p className="muted">
+              <span className="online-dot" aria-hidden="true" /> Online
+            </p>
+          ) : null}
         </div>
       </div>
       <section className="card card-body stack">
@@ -49,7 +58,7 @@ export default async function ConversationPage({
           </p>
         ))}
       </section>
-      <MessageComposer username={username} />
+      <MessageComposer username={username} conversationId={conversation.conversationId} />
     </>
   );
 }

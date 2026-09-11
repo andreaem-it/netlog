@@ -107,6 +107,7 @@ export const editProfileSchema = z.object({
   recordVisits: checkboxSchema,
   showVisitors: checkboxSchema,
   notifyVisits: checkboxSchema,
+  showOnline: checkboxSchema,
 });
 
 export type FormState = {

@@ -372,6 +372,7 @@ model ConversationParticipant {
   joinedAt          DateTime     @default(now()) @map("joined_at") @db.Timestamptz(3)
   lastReadMessageId String?      @map("last_read_message_id") @db.Uuid
   archivedAt        DateTime?    @map("archived_at") @db.Timestamptz(3)
+  typingUntil       DateTime?    @map("typing_until") @db.Timestamptz(3)
   conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages          Message[]    @relation("MessageSender")
