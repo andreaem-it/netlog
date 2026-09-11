@@ -311,13 +311,14 @@ h3 {
 }
 .form-stack label:has(> input[type="checkbox"]) {
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   font-weight: 400;
 }
 .form-stack input[type="checkbox"] {
   width: 18px;
   height: 18px;
+  margin-top: 2px;
   flex-shrink: 0;
 }
 .form-stack textarea {

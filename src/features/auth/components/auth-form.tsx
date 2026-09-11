@@ -103,15 +103,17 @@ export function AuthForm({ mode, token }: { mode: Mode; token?: string }) {
       {mode === "register" && (
         <label>
           <input type="checkbox" name="ageConsent" required />
-          {" "}Confermo di avere almeno 13 anni e accetto{" "}
-          <Link href="/termini" target="_blank">
-            i Termini
-          </Link>{" "}
-          e la{" "}
-          <Link href="/privacy" target="_blank">
-            Privacy Policy
-          </Link>
-          .
+          <span>
+            Confermo di avere almeno 13 anni e accetto{" "}
+            <Link href="/termini" target="_blank">
+              i Termini
+            </Link>{" "}
+            e la{" "}
+            <Link href="/privacy" target="_blank">
+              Privacy Policy
+            </Link>
+            .
+          </span>
         </label>
       )}
       {state.message && (
