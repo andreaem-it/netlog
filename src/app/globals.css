@@ -378,6 +378,27 @@ h3 {
     transform: rotate(360deg);
   }
 }
+.skeleton-block {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--line) 25%, #f0f1f4 37%, var(--line) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+.skeleton-round {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
 .app-header {
   height: 78px;
   background: white;
@@ -906,7 +927,8 @@ h3 {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .spin {
+  .spin,
+  .skeleton-block {
     animation: none;
   }
 }
