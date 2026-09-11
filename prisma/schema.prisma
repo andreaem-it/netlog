@@ -60,39 +60,41 @@ enum ReportStatus {
 }
 
 model User {
-  id                  String                    @id @default(uuid()) @db.Uuid
-  email               String                    @unique @db.VarChar(254)
-  emailVerified       DateTime?                 @map("email_verified") @db.Timestamptz(3)
-  passwordHash        String?                   @map("password_hash")
-  name                String                    @db.VarChar(60)
-  image               String?
-  status              UserStatus                @default(ACTIVE)
-  sessionVersion      Int                       @default(0) @map("session_version")
-  lastSeenAt          DateTime?                 @map("last_seen_at") @db.Timestamptz(3)
-  createdAt           DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  profile             Profile?
-  accounts            Account[]
-  sessions            Session[]
-  passwordResetTokens PasswordResetToken[]
-  friendshipsLow      Friendship[]              @relation("FriendLow")
-  friendshipsHigh     Friendship[]              @relation("FriendHigh")
-  sentRequests        FriendRequest[]           @relation("RequestSender")
-  receivedRequests    FriendRequest[]           @relation("RequestRecipient")
-  blocks              Block[]                   @relation("Blocker")
-  blockedBy           Block[]                   @relation("Blocked")
-  media               MediaAsset[]
-  posts               Post[]
-  comments            Comment[]
-  likes               Like[]
-  views               ProfileView[]
-  notifications       Notification[]            @relation("NotificationRecipient")
-  notificationsActed  Notification[]            @relation("NotificationActor")
-  conversationsLow    Conversation[]            @relation("ConversationLow")
-  conversationsHigh   Conversation[]            @relation("ConversationHigh")
-  participations      ConversationParticipant[]
-  reportsFiled        Report[]                  @relation("ReportsFiled")
+  id                   String                    @id @default(uuid()) @db.Uuid
+  email                String                    @unique @db.VarChar(254)
+  emailVerified        DateTime?                 @map("email_verified") @db.Timestamptz(3)
+  passwordHash         String?                   @map("password_hash")
+  name                 String                    @db.VarChar(60)
+  image                String?
+  status               UserStatus                @default(ACTIVE)
+  sessionVersion       Int                       @default(0) @map("session_version")
+  lastSeenAt           DateTime?                 @map("last_seen_at") @db.Timestamptz(3)
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  profile              Profile?
+  accounts             Account[]
+  sessions             Session[]
+  passwordResetTokens  PasswordResetToken[]
+  friendshipsLow       Friendship[]              @relation("FriendLow")
+  friendshipsHigh      Friendship[]              @relation("FriendHigh")
+  sentRequests         FriendRequest[]           @relation("RequestSender")
+  receivedRequests     FriendRequest[]           @relation("RequestRecipient")
+  blocks               Block[]                   @relation("Blocker")
+  blockedBy            Block[]                   @relation("Blocked")
+  media                MediaAsset[]
+  posts                Post[]
+  comments             Comment[]
+  likes                Like[]
+  views                ProfileView[]
+  notifications        Notification[]            @relation("NotificationRecipient")
+  notificationsActed   Notification[]            @relation("NotificationActor")
+  conversationsLow     Conversation[]            @relation("ConversationLow")
+  conversationsHigh    Conversation[]            @relation("ConversationHigh")
+  conversationsCreated Conversation[]            @relation("ConversationCreator")
+  participations       ConversationParticipant[]
+  reportsFiled         Report[]                  @relation("ReportsFiled")
   reportsReceived      Report[]                  @relation("ReportsReceived")
+  pushSubscriptions    PushSubscription[]
 
   @@index([createdAt, id])
   @@map("users")
@@ -351,17 +353,22 @@ model Notification {
 
 model Conversation {
   id            String                    @id @default(uuid()) @db.Uuid
-  userLowId     String                    @map("user_low_id") @db.Uuid
-  userHighId    String                    @map("user_high_id") @db.Uuid
+  isGroup       Boolean                   @default(false) @map("is_group")
+  name          String?                   @db.VarChar(80)
+  // Direct (1:1) conversations only: the canonical ordered pair. Null for
+  // groups, which identify their members purely through ConversationParticipant.
+  userLowId     String?                   @map("user_low_id") @db.Uuid
+  userHighId    String?                   @map("user_high_id") @db.Uuid
+  createdById   String?                   @map("created_by_id") @db.Uuid
   createdAt     DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
   lastMessageAt DateTime?                 @map("last_message_at") @db.Timestamptz(3)
-  userLow       User                      @relation("ConversationLow", fields: [userLowId], references: [id], onDelete: Cascade)
-  userHigh      User                      @relation("ConversationHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+  userLow       User?                     @relation("ConversationLow", fields: [userLowId], references: [id], onDelete: Cascade)
+  userHigh      User?                     @relation("ConversationHigh", fields: [userHighId], references: [id], onDelete: Cascade)
+  createdBy     User?                     @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)
   participants  ConversationParticipant[]
   messages      Message[]
   notifications Notification[]
 
-  @@unique([userLowId, userHighId])
   @@index([userHighId])
   @@map("conversations")
 }
@@ -426,4 +433,17 @@ model Report {
   @@unique([reporterId, reportedUserId])
   @@index([status, createdAt])
   @@map("reports")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

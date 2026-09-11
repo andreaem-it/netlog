@@ -17,6 +17,8 @@ export async function listConversations(userId: string) {
       conversation: {
         select: {
           id: true,
+          isGroup: true,
+          name: true,
           userLowId: true,
           userHighId: true,
           lastMessageAt: true,
@@ -58,27 +60,33 @@ export async function listConversations(userId: string) {
 
   const withUnread = await Promise.all(
     active.map(async (p) => {
-      const other =
-        p.conversation.userLowId === userId
-          ? p.conversation.userHigh
-          : p.conversation.userLow;
+      const conversation = p.conversation;
+      const other = conversation.isGroup
+        ? null
+        : conversation.userLowId === userId
+          ? conversation.userHigh
+          : conversation.userLow;
       const since = p.lastReadMessageId
         ? (lastReadAt.get(p.lastReadMessageId) ?? new Date(0))
         : new Date(0);
       const unreadCount = await db.message.count({
         where: {
-          conversationId: p.conversation.id,
+          conversationId: conversation.id,
           senderId: { not: userId },
           createdAt: { gt: since },
         },
       });
       return {
-        conversationId: p.conversation.id,
-        otherName: other.name,
-        otherUsername: other.profile?.username ?? "",
-        otherOnline: other.profile?.showOnline ? isOnline(other.lastSeenAt) : false,
-        lastMessage: p.conversation.messages[0]!.body,
-        lastMessageAt: p.conversation.messages[0]!.createdAt,
+        conversationId: conversation.id,
+        isGroup: conversation.isGroup,
+        title: conversation.isGroup ? conversation.name! : other!.name,
+        otherUsername: conversation.isGroup ? null : (other!.profile?.username ?? ""),
+        otherOnline:
+          !conversation.isGroup && other!.profile?.showOnline
+            ? isOnline(other!.lastSeenAt)
+            : false,
+        lastMessage: conversation.messages[0]!.body,
+        lastMessageAt: conversation.messages[0]!.createdAt,
         unreadCount,
       };
     }),
@@ -145,12 +153,60 @@ export async function getConversationWithUsername(
   };
 }
 
+export async function getGroupConversation(userId: string, conversationId: string) {
+  const membership = await db.conversationParticipant.findUnique({
+    where: { conversationId_userId: { conversationId, userId } },
+    select: {
+      conversation: {
+        select: {
+          id: true,
+          isGroup: true,
+          name: true,
+          participants: {
+            select: { user: { select: { id: true, name: true } } },
+          },
+        },
+      },
+    },
+  });
+  if (!membership?.conversation.isGroup) return null;
+  return {
+    conversationId: membership.conversation.id,
+    name: membership.conversation.name!,
+    members: membership.conversation.participants.map((p) => p.user),
+  };
+}
+
+export async function isAnyoneElseTyping(conversationId: string, excludeUserId: string) {
+  const typing = await db.conversationParticipant.findFirst({
+    where: {
+      conversationId,
+      userId: { not: excludeUserId },
+      typingUntil: { gt: new Date() },
+    },
+    select: { userId: true },
+  });
+  return Boolean(typing);
+}
+
 export async function getMessages(conversationId: string) {
   const messages = await db.message.findMany({
     where: { conversationId },
     orderBy: { createdAt: "asc" },
     take: MESSAGES_PAGE_SIZE,
-    select: { id: true, body: true, senderId: true, createdAt: true },
+    select: {
+      id: true,
+      body: true,
+      senderId: true,
+      createdAt: true,
+      sender: { select: { user: { select: { name: true } } } },
+    },
   });
-  return messages;
+  return messages.map((message) => ({
+    id: message.id,
+    body: message.body,
+    senderId: message.senderId,
+    createdAt: message.createdAt,
+    senderName: message.sender.user.name,
+  }));
 }

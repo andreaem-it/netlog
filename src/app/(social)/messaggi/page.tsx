@@ -16,6 +16,9 @@ export default async function MessaggiPage() {
           <p className="eyebrow">LE TUE CONVERSAZIONI</p>
           <h1>Messaggi.</h1>
         </div>
+        <Link href="/messaggi/nuovo-gruppo" className="button">
+          Crea gruppo
+        </Link>
       </div>
       <section className="card">
         <div className="card-body stack">
@@ -28,12 +31,16 @@ export default async function MessaggiPage() {
           {conversations.map((conversation) => (
             <Link
               key={conversation.conversationId}
-              href={`/messaggi/${conversation.otherUsername}`}
+              href={
+                conversation.isGroup
+                  ? `/messaggi/gruppo/${conversation.conversationId}`
+                  : `/messaggi/${conversation.otherUsername}`
+              }
               className="button-row"
               style={{ justifyContent: "space-between" }}
             >
               <span>
-                <strong>{conversation.otherName}</strong>
+                <strong>{conversation.title}</strong>
                 {conversation.otherOnline && (
                   <span className="online-dot" aria-hidden="true" />
                 )}

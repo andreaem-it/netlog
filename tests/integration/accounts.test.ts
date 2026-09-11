@@ -46,9 +46,18 @@ import { getUnreadNotificationCount, listNotifications } from "@/features/notifi
 import { markAllNotificationsRead } from "@/features/notifications/service";
 import { recordProfileView } from "@/features/visits/service";
 import { listVisitors } from "@/features/visits/queries";
-import { MessageActionError, markConversationRead, sendMessage, setTyping } from "@/features/messages/service";
+import {
+  MessageActionError,
+  createGroupConversation,
+  leaveGroupConversation,
+  markConversationRead,
+  sendGroupMessage,
+  sendMessage,
+  setTyping,
+} from "@/features/messages/service";
 import {
   getConversationWithUsername,
+  getGroupConversation,
   getMessages,
   listConversations,
 } from "@/features/messages/queries";
@@ -588,6 +597,63 @@ describe("identity and authorization on PostgreSQL", () => {
     await db.block.create({ data: { blockerId: b.id, blockedId: a.id } });
     await expect(
       sendMessage(a.id, "marco", { body: "ancora ciao", clientId: randomUUID() }),
+    ).rejects.toThrow(MessageActionError);
+  });
+  it("creates a group chat among friends, sends/reads messages, and lets a member leave", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    for (const other of ["marco", "sofia"]) {
+      await sendFriendRequest(a.id, other);
+      const pending = await listPendingRequests(other === "marco" ? b.id : c.id);
+      await respondToFriendRequest(
+        other === "marco" ? b.id : c.id,
+        pending.incoming[0]!.requestId,
+        true,
+      );
+    }
+
+    const group = await createGroupConversation(a.id, {
+      name: "Weekend",
+      memberUsernames: ["marco", "sofia"],
+    });
+    const members = await getGroupConversation(a.id, group.id);
+    expect(members?.members).toHaveLength(3);
+
+    const clientId = randomUUID();
+    await sendGroupMessage(a.id, group.id, { body: "ciao a tutti", clientId });
+    // Idempotent per clientId, same as direct messages.
+    await sendGroupMessage(a.id, group.id, { body: "ciao a tutti", clientId });
+    expect(await getMessages(group.id)).toHaveLength(1);
+    expect((await getMessages(group.id))[0]).toMatchObject({ senderName: "giulia" });
+
+    const bConvos = await listConversations(b.id);
+    expect(bConvos).toMatchObject([{ isGroup: true, title: "Weekend", unreadCount: 1 }]);
+
+    await expect(
+      sendGroupMessage(c.id, group.id, { body: "presente", clientId: randomUUID() }),
+    ).resolves.toMatchObject({ conversationId: group.id });
+
+    await leaveGroupConversation(c.id, group.id);
+    expect((await getGroupConversation(a.id, group.id))?.members).toHaveLength(2);
+    await expect(
+      sendGroupMessage(c.id, group.id, { body: "ancora qui?", clientId: randomUUID() }),
+    ).rejects.toThrow(MessageActionError);
+  });
+  it("rejects creating a group with a non-friend", async () => {
+    const a = await account("giulia");
+    await account("marco");
+    const b = await account("sofia");
+    await sendFriendRequest(a.id, "sofia");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+
+    // marco is not a friend of giulia: group creation must reject it.
+    await expect(
+      createGroupConversation(a.id, {
+        name: "Gruppo",
+        memberUsernames: ["marco", "sofia"],
+      }),
     ).rejects.toThrow(MessageActionError);
   });
   it("shows online/typing status only when the other user opted in via showOnline", async () => {
