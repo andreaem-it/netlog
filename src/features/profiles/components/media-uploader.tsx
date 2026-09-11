@@ -7,22 +7,14 @@ import {
   AVATAR_COVER_MAX_BYTES,
   AVATAR_COVER_MIME_TYPES,
 } from "@/features/profiles/media";
+import { ImageCropper } from "./image-cropper";
 
-function readImageDimensions(file: File) {
-  return new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Il file selezionato non è un'immagine valida."));
-    };
-    image.src = url;
-  });
-}
+// Fixed output size per kind: the crop viewport uses the same aspect ratio,
+// so what you see while cropping is exactly what gets uploaded.
+const OUTPUT_SIZE = {
+  avatar: { width: 512, height: 512, aspect: 1 },
+  cover: { width: 1200, height: 400, aspect: 3 },
+} as const;
 
 export function MediaUploader({
   kind,
@@ -39,8 +31,9 @@ export function MediaUploader({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
-  async function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -54,21 +47,20 @@ export function MediaUploader({
       setError("L'immagine supera i 5 MB consentiti.");
       return;
     }
+    setCropFile(file);
+  }
+
+  async function handleCropped(blob: Blob) {
+    setCropFile(null);
     setPending(true);
+    const { width, height } = OUTPUT_SIZE[kind];
     try {
-      const { width, height } = await readImageDimensions(file);
-      const extension = file.type.split("/")[1];
-      await upload(`${kind}-${crypto.randomUUID()}.${extension}`, file, {
+      await upload(`${kind}-${crypto.randomUUID()}.jpg`, blob, {
         access: "public",
         handleUploadUrl: "/api/media/upload",
-        clientPayload: JSON.stringify({
-          kind,
-          width,
-          height,
-          size: file.size,
-        }),
+        clientPayload: JSON.stringify({ kind, width, height, size: blob.size }),
       });
-      setPreview(URL.createObjectURL(file));
+      setPreview(URL.createObjectURL(blob));
       setSuccess(true);
       // ponytail: the DB row is written by the onUploadCompleted webhook,
       // which only reaches this app on a publicly deployed URL (not plain
@@ -89,39 +81,52 @@ export function MediaUploader({
 
   return (
     <span className="media-uploader">
-      {displayUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- plain <img>: app doesn't use next/image elsewhere.
-        <img
-          src={displayUrl}
-          alt={`Anteprima ${kind === "avatar" ? "avatar" : "copertina"}`}
-          className={kind === "avatar" ? "avatar avatar-large" : "cover-preview"}
+      {cropFile ? (
+        <ImageCropper
+          file={cropFile}
+          aspect={OUTPUT_SIZE[kind].aspect}
+          outputWidth={OUTPUT_SIZE[kind].width}
+          outputHeight={OUTPUT_SIZE[kind].height}
+          onCancel={() => setCropFile(null)}
+          onConfirm={handleCropped}
         />
-      )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept={AVATAR_COVER_MIME_TYPES.join(",")}
-        hidden
-        onChange={handleChange}
-      />
-      <button
-        type="button"
-        className="button"
-        disabled={pending}
-        onClick={() => inputRef.current?.click()}
-      >
-        <Camera size={15} />
-        {pending ? "Caricamento…" : label}
-      </button>
-      {error && (
-        <p className="form-message error" role="alert">
-          {error}
-        </p>
-      )}
-      {success && !error && (
-        <p className="form-message success" role="status">
-          Immagine caricata.
-        </p>
+      ) : (
+        <>
+          {displayUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- plain <img>: app doesn't use next/image elsewhere.
+            <img
+              src={displayUrl}
+              alt={`Anteprima ${kind === "avatar" ? "avatar" : "copertina"}`}
+              className={kind === "avatar" ? "avatar avatar-large" : "cover-preview"}
+            />
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept={AVATAR_COVER_MIME_TYPES.join(",")}
+            hidden
+            onChange={handleChange}
+          />
+          <button
+            type="button"
+            className="button"
+            disabled={pending}
+            onClick={() => inputRef.current?.click()}
+          >
+            <Camera size={15} />
+            {pending ? "Caricamento…" : label}
+          </button>
+          {error && (
+            <p className="form-message error" role="alert">
+              {error}
+            </p>
+          )}
+          {success && !error && (
+            <p className="form-message success" role="status">
+              Immagine caricata.
+            </p>
+          )}
+        </>
       )}
     </span>
   );
