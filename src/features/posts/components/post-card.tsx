@@ -28,6 +28,7 @@ export async function PostCard({
     likeCount: number;
     commentCount: number;
     likedByViewer: boolean;
+    imageUrls: string[];
   };
   viewerId: string;
 }) {
@@ -66,7 +67,15 @@ export async function PostCard({
           <ReportButton target="post" postId={post.id} />
         )}
       </div>
-      <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>
+      {post.body && <p style={{ whiteSpace: "pre-wrap" }}>{post.body}</p>}
+      {post.imageUrls.length > 0 && (
+        <div className={`post-images post-images-${post.imageUrls.length}`}>
+          {post.imageUrls.map((url) => (
+            // eslint-disable-next-line @next/next/no-img-element -- plain <img>: app doesn't use next/image elsewhere.
+            <img key={url} src={url} alt="Immagine del post" className="post-image" />
+          ))}
+        </div>
+      )}
       <div className="button-row">
         <form action={toggleLikeAction}>
           <input type="hidden" name="postId" value={post.id} />

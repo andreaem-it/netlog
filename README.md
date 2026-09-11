@@ -12,7 +12,7 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 - Ricerca paginata dei profili pubblici e discoverable, su `/persone`, con esclusione automatica degli utenti bloccati.
 - Avatar e copertina personalizzati (JPEG/PNG/WebP, fino a 5&nbsp;MB), con ritaglio/zoom prima del caricamento (viewport trascinabile, canvas nativo, nessuna libreria), caricati direttamente dal browser su Vercel Blob e collegati al profilo.
 - Amicizie: richieste, accettazione/rifiuto, annullamento, rimozione e blocco/sblocco utenti, con gestione atomica delle richieste incrociate e delle richieste duplicate a livello di database. Pagina `/amici` per gestire richieste, amici e persone bloccate; azioni disponibili anche dal profilo pubblico.
-- Post testuali con visibilità pubblico/solo amici/privato, like e commenti, feed cronologico in home (post propri + amici + pubblici, esclusi gli utenti bloccati). Le immagini nei post non sono ancora supportate.
+- Post con testo e/o fino a 4 foto (visibilità pubblico/solo amici/privato), like e commenti, feed cronologico in home (post propri + amici + pubblici, esclusi gli utenti bloccati). Niente video, per costo/complessità di storage e transcodifica.
 - Notifiche (richiesta di amicizia, accettazione, like, commento, visita profilo) su `/notifiche`, con segna-tutte-come-lette.
 - Visite al profilo su base di consenso esplicito: disattivate di default, l'utente deve attivarle dalle impostazioni. Finestra mobile di 24h per evitare notifiche/registrazioni duplicate dallo stesso visitatore; elenco visitatori (opzionale) limitato agli ultimi 30 giorni.
 - Messaggi privati 1:1 su `/messaggi`, con permesso configurabile (amici/tutti/nessuno), invio idempotente (stesso `clientId` non duplica un messaggio in caso di doppio submit o retry), conteggio dei non letti e aggiornamento della conversazione tramite polling ogni 5 secondi.
@@ -148,7 +148,7 @@ Nota per il futuro: `getFeed` filtra con un `OR` tra post propri, pubblici e "so
 1. **Completata:** fondazioni, identità, reset password, profilo base, seed e primi test.
 2. **Completata:** data di nascita opzionale (mai esposta pubblicamente), ricerca paginata dei profili pubblici, avatar/cover su Vercel Blob.
 3. **Completata:** amicizie, richieste (con auto-accettazione se incrociate), blocchi, privacy e autorizzazioni concorrenti demandate ai vincoli PostgreSQL (indice parziale sulle richieste pendenti, vincolo unico sulle amicizie).
-4. **In parte completata:** post testuali, like, commenti e feed cronologico in home, con la stessa policy di visibilità/blocchi dei profili. Le immagini nei post restano da fare (riusano lo stesso backend di storage di avatar/copertina, ma serve legare l'upload al post prima di crearlo).
+4. **Completata:** post con testo e/o foto (fino a 4, no video), like, commenti e feed cronologico in home, con la stessa policy di visibilità/blocchi dei profili.
 5. **Completata:** notifiche, visite al profilo su consenso con finestra mobile, conservazione dati (`pnpm db:cleanup` ora purga anche visite oltre 30 giorni e notifiche lette oltre 90 giorni).
 6. **Completata:** messaggi 1:1, permesso configurabile, invio idempotente, non letti, polling.
 7. **Completata:** hardening (header di sicurezza già presenti, verificati), suite E2E automatizzata (`pnpm test:e2e`), misure delle query (indici già coperti, documentati in "Misure delle query"), backup/ripristino (PITR nativo di Neon, documentato) e deploy (già in produzione su Vercel dalle milestone precedenti).

@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import { createPostAction } from "../actions";
 import { initialFormState } from "@/features/auth/schemas";
+import { PostImagePicker } from "./post-image-picker";
 
 export function PostComposer() {
   const [state, action, pending] = useActionState(
@@ -9,12 +10,17 @@ export function PostComposer() {
     initialFormState,
   );
   const [body, setBody] = useState("");
+  const [imagesPending, setImagesPending] = useState(false);
+  const [pickerKey, setPickerKey] = useState(0);
   // Clear the draft once the action reports success. Derived during render
   // (not in an effect) per React's guidance for resetting state on change.
   const [lastState, setLastState] = useState(state);
   if (state !== lastState) {
     setLastState(state);
-    if (state.status === "success") setBody("");
+    if (state.status === "success") {
+      setBody("");
+      setPickerKey((key) => key + 1);
+    }
   }
   return (
     <form action={action} className="form-stack">
@@ -28,13 +34,14 @@ export function PostComposer() {
           placeholder="A cosa stai pensando?"
         />
       </label>
+      <PostImagePicker key={pickerKey} disabled={pending} onPendingChange={setImagesPending} />
       <div className="button-row">
         <select name="visibility" defaultValue="FRIENDS">
           <option value="FRIENDS">Solo amici</option>
           <option value="PUBLIC">Tutti</option>
           <option value="PRIVATE">Solo io</option>
         </select>
-        <button className="button button-primary" disabled={pending}>
+        <button className="button button-primary" disabled={pending || imagesPending}>
           {pending ? "Pubblicazione…" : "Pubblica"}
         </button>
       </div>

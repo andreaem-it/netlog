@@ -13,12 +13,16 @@ import {
 } from "@/features/profiles/media";
 
 const clientMetaSchema = z.object({
-  kind: z.enum(["avatar", "cover"]),
+  kind: z.enum(["avatar", "cover", "post"]),
   // ponytail: sanity bound, not a real constraint — file size (5MB) already caps the payload.
   // Raised from 8000 after a real high-res phone photo (>8000px) was rejected.
   width: z.number().int().positive().max(20000),
   height: z.number().int().positive().max(20000),
   size: z.number().int().positive().max(AVATAR_COVER_MAX_BYTES),
+  // Only used for kind "post": the client picks the id up front so the post
+  // (created separately, after all images finish uploading) can reference
+  // it immediately instead of waiting on this webhook.
+  assetId: z.uuid().optional(),
 });
 const tokenPayloadSchema = clientMetaSchema.extend({ userId: z.uuid() });
 
@@ -33,6 +37,8 @@ export async function POST(request: Request) {
         if (!user) throw new Error("Devi accedere per caricare un'immagine.");
         await consumeRateLimit("media-upload", user.id, 20, 3600);
         const meta = clientMetaSchema.parse(JSON.parse(clientPayload ?? "{}"));
+        if (meta.kind === "post" && !meta.assetId)
+          throw new Error("Richiesta non valida.");
         return {
           allowedContentTypes: AVATAR_COVER_MIME_TYPES,
           maximumSizeInBytes: AVATAR_COVER_MAX_BYTES,
@@ -42,9 +48,25 @@ export async function POST(request: Request) {
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
         if (!tokenPayload) return;
-        const { userId, kind, width, height, size } = tokenPayloadSchema.parse(
-          JSON.parse(tokenPayload),
-        );
+        const { userId, kind, width, height, size, assetId } =
+          tokenPayloadSchema.parse(JSON.parse(tokenPayload));
+        if (kind === "post") {
+          // Unattached until the post is created (createPost links it via
+          // its client-generated id); no profile/post target exists yet.
+          await db.mediaAsset.create({
+            data: {
+              id: assetId,
+              ownerId: userId,
+              storageKey: blob.url,
+              mimeType: blob.contentType,
+              size,
+              width,
+              height,
+              status: "READY",
+            },
+          });
+          return;
+        }
         const { previousAssetId } = await applyProfileMedia({
           userId,
           kind,

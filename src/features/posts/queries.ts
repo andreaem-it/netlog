@@ -55,6 +55,10 @@ export async function getFeed(viewerId: string, cursor?: string) {
       },
       _count: { select: { comments: true, likes: true } },
       likes: { where: { userId: viewerId }, select: { userId: true }, take: 1 },
+      images: {
+        orderBy: { position: "asc" },
+        select: { asset: { select: { storageKey: true } } },
+      },
     },
   });
   const hasMore = rows.length > FEED_PAGE_SIZE;
@@ -72,6 +76,7 @@ export async function getFeed(viewerId: string, cursor?: string) {
       likeCount: post._count.likes,
       commentCount: post._count.comments,
       likedByViewer: post.likes.length > 0,
+      imageUrls: post.images.map((image) => image.asset.storageKey),
     })),
     nextCursor: hasMore ? page[page.length - 1]!.id : null,
   };
