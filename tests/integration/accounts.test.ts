@@ -82,6 +82,13 @@ import {
 } from "@/features/albums/service";
 import { getAlbum, listOwnAlbums, listVisibleAlbums } from "@/features/albums/queries";
 import {
+  BlogActionError,
+  createBlogPost,
+  deleteBlogPost,
+  updateBlogPost,
+} from "@/features/blog/service";
+import { getBlogPost, listOwnBlogPosts, listVisibleBlogPosts } from "@/features/blog/queries";
+import {
   getRelationship,
   listBlockedUsers,
   listFriends,
@@ -1016,6 +1023,62 @@ describe("identity and authorization on PostgreSQL", () => {
     const pending = await listPendingRequests(b.id);
     await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
     expect(await listVisibleAlbums("giulia", b.id)).toMatchObject([{ title: "Privato-ish" }]);
+  });
+  it("creates, edits, and deletes a blog post, only the author allowed", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const post = await createBlogPost(a.id, {
+      title: "Il mio primo post",
+      body: "Un racconto lungo quanto basta.",
+      visibility: "PUBLIC",
+    });
+    expect(await listOwnBlogPosts(a.id)).toMatchObject([{ title: "Il mio primo post" }]);
+    expect(await getBlogPost(b.id, post.id)).toMatchObject({ owner: false });
+
+    await expect(
+      updateBlogPost(b.id, post.id, {
+        title: "Rubato",
+        body: "Non è mio.",
+        visibility: "PUBLIC",
+      }),
+    ).rejects.toThrow(BlogActionError);
+    await updateBlogPost(a.id, post.id, {
+      title: "Titolo aggiornato",
+      body: "Testo aggiornato.",
+      visibility: "PUBLIC",
+    });
+    expect((await getBlogPost(a.id, post.id))?.title).toBe("Titolo aggiornato");
+
+    await expect(deleteBlogPost(b.id, post.id)).rejects.toThrow(BlogActionError);
+    await deleteBlogPost(a.id, post.id);
+    expect(await getBlogPost(a.id, post.id)).toBeNull();
+  });
+  it("shows blog posts to the audience matching each post's own visibility", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    await createBlogPost(a.id, { title: "Pubblico", body: "per tutti", visibility: "PUBLIC" });
+    await createBlogPost(a.id, {
+      title: "Solo amici",
+      body: "per gli amici",
+      visibility: "FRIENDS",
+    });
+    await createBlogPost(a.id, { title: "Privato", body: "solo io", visibility: "PRIVATE" });
+
+    // A stranger only sees the public one.
+    expect((await listVisibleBlogPosts(c.id, "giulia")).posts).toMatchObject([
+      { title: "Pubblico" },
+    ]);
+
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    const forFriend = (await listVisibleBlogPosts(b.id, "giulia")).posts;
+    expect(forFriend).toHaveLength(2);
+    expect(forFriend.map((p) => p.title).sort()).toEqual(["Pubblico", "Solo amici"]);
+
+    // The author sees everything, including the private one.
+    expect((await listVisibleBlogPosts(a.id, "giulia")).posts).toHaveLength(3);
   });
   it("limits concurrent requests atomically", async () => {
     const results = await Promise.allSettled(

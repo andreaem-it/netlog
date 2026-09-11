@@ -11,6 +11,7 @@ import {
   Settings2,
   ShieldAlert,
   Images,
+  NotebookPen,
 } from "lucide-react";
 
 export function Navigation({
@@ -29,6 +30,7 @@ export function Navigation({
         { label: "Amici", href: "/amici", icon: HeartHandshake },
         { label: "Messaggi", href: "/messaggi", icon: MessageCircle },
         { label: "Album", href: "/album", icon: Images },
+        { label: "Blog", href: "/blog", icon: NotebookPen },
         { label: "Notifiche", href: "/notifiche", icon: Bell },
         { label: "Il mio profilo", href: `/u/${username}`, icon: UserRound },
         { label: "Impostazioni", href: "/settings", icon: Settings2 },
