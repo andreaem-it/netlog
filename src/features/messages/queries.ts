@@ -162,6 +162,7 @@ export async function getGroupConversation(userId: string, conversationId: strin
           id: true,
           isGroup: true,
           name: true,
+          createdById: true,
           participants: {
             select: { user: { select: { id: true, name: true } } },
           },
@@ -173,8 +174,39 @@ export async function getGroupConversation(userId: string, conversationId: strin
   return {
     conversationId: membership.conversation.id,
     name: membership.conversation.name!,
+    ownerId: membership.conversation.createdById,
     members: membership.conversation.participants.map((p) => p.user),
   };
+}
+
+// Friends of `userId` who aren't already in the group — the candidate list
+// for "add people", so the UI never offers someone already a member.
+export async function listAddableFriends(userId: string, conversationId: string) {
+  const [friendships, participants] = await Promise.all([
+    db.friendship.findMany({
+      where: { OR: [{ userLowId: userId }, { userHighId: userId }] },
+      select: {
+        userLowId: true,
+        userHighId: true,
+        userLow: {
+          select: { id: true, name: true, profile: { select: { username: true } } },
+        },
+        userHigh: {
+          select: { id: true, name: true, profile: { select: { username: true } } },
+        },
+      },
+    }),
+    db.conversationParticipant.findMany({
+      where: { conversationId },
+      select: { userId: true },
+    }),
+  ]);
+  const memberIds = new Set(participants.map((p) => p.userId));
+  return friendships
+    .map((f) => (f.userLowId === userId ? f.userHigh : f.userLow))
+    .filter((friend) => !memberIds.has(friend.id))
+    .map((friend) => ({ name: friend.name, username: friend.profile?.username ?? "" }))
+    .filter((friend) => friend.username);
 }
 
 export async function isAnyoneElseTyping(conversationId: string, excludeUserId: string) {
@@ -189,11 +221,17 @@ export async function isAnyoneElseTyping(conversationId: string, excludeUserId: 
   return Boolean(typing);
 }
 
-export async function getMessages(conversationId: string) {
-  const messages = await db.message.findMany({
+// Without a cursor: the most recent page (what you see on opening a thread).
+// With a cursor (a message id from a previous call's `nextCursor`): the page
+// of messages older than that one — "carica messaggi precedenti".
+// Previously this ordered ascending and always took the first 50 ever sent,
+// so any conversation past 50 messages could never show anything newer.
+export async function getMessages(conversationId: string, cursor?: string) {
+  const rows = await db.message.findMany({
     where: { conversationId },
-    orderBy: { createdAt: "asc" },
-    take: MESSAGES_PAGE_SIZE,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    take: MESSAGES_PAGE_SIZE + 1,
     select: {
       id: true,
       body: true,
@@ -202,11 +240,19 @@ export async function getMessages(conversationId: string) {
       sender: { select: { user: { select: { name: true } } } },
     },
   });
-  return messages.map((message) => ({
-    id: message.id,
-    body: message.body,
-    senderId: message.senderId,
-    createdAt: message.createdAt,
-    senderName: message.sender.user.name,
-  }));
+  const hasMore = rows.length > MESSAGES_PAGE_SIZE;
+  const page = hasMore ? rows.slice(0, MESSAGES_PAGE_SIZE) : rows;
+  return {
+    messages: page
+      .slice()
+      .reverse()
+      .map((message) => ({
+        id: message.id,
+        body: message.body,
+        senderId: message.senderId,
+        createdAt: message.createdAt,
+        senderName: message.sender.user.name,
+      })),
+    nextCursor: hasMore ? page[page.length - 1]!.id : null,
+  };
 }

@@ -3,7 +3,12 @@ import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db/client";
 import { orderedPair } from "@/features/profiles/policy";
 import { createNotification } from "@/features/notifications/service";
-import { groupSchema, messageSchema } from "./schemas";
+import {
+  addGroupMembersSchema,
+  groupSchema,
+  messageSchema,
+  renameGroupSchema,
+} from "./schemas";
 
 export class MessageActionError extends Error {}
 
@@ -231,6 +236,82 @@ export async function leaveGroupConversation(actorId: string, conversationId: st
   });
   if (result.count === 0)
     throw new MessageActionError("Non fai parte di questo gruppo.");
+}
+
+async function requireGroupMembership(actorId: string, conversationId: string) {
+  const membership = await db.conversationParticipant.findUnique({
+    where: { conversationId_userId: { conversationId, userId: actorId } },
+    select: { conversation: { select: { isGroup: true, createdById: true } } },
+  });
+  if (!membership?.conversation.isGroup)
+    throw new MessageActionError("Questo gruppo non è più disponibile.");
+  return membership.conversation;
+}
+
+// Same single-owner model as removeGroupMember: one creator manages the
+// group's identity (name, membership) rather than every member being able to.
+export async function renameGroupConversation(
+  actorId: string,
+  conversationId: string,
+  input: unknown,
+) {
+  const conversation = await requireGroupMembership(actorId, conversationId);
+  if (conversation.createdById !== actorId)
+    throw new MessageActionError("Solo chi ha creato il gruppo può rinominarlo.");
+  const data = renameGroupSchema.parse(input);
+  await db.conversation.update({
+    where: { id: conversationId },
+    data: { name: data.name },
+  });
+}
+
+// Same trust boundary as group creation: new members must be friends of
+// whoever is adding them, not just of the group's creator.
+export async function addGroupMembers(
+  actorId: string,
+  conversationId: string,
+  input: unknown,
+) {
+  await requireGroupMembership(actorId, conversationId);
+  const data = addGroupMembersSchema.parse(input);
+  const members = await db.user.findMany({
+    where: {
+      profile: { username: { in: data.memberUsernames } },
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+  if (members.length !== new Set(data.memberUsernames).size)
+    throw new MessageActionError("Uno degli utenti scelti non è stato trovato.");
+  const friendships = await db.friendship.findMany({
+    where: { OR: members.map((m) => orderedPair(actorId, m.id)) },
+    select: { id: true },
+  });
+  if (friendships.length !== members.length)
+    throw new MessageActionError("Puoi aggiungere al gruppo solo i tuoi amici.");
+  await db.conversationParticipant.createMany({
+    data: members.map((m) => ({ conversationId, userId: m.id })),
+    skipDuplicates: true,
+  });
+}
+
+// Kicking someone out is the one action that needs a single owner rather
+// than "any member can do it" — restricted to whoever created the group.
+export async function removeGroupMember(
+  actorId: string,
+  conversationId: string,
+  targetUserId: string,
+) {
+  const conversation = await requireGroupMembership(actorId, conversationId);
+  if (conversation.createdById !== actorId)
+    throw new MessageActionError("Solo chi ha creato il gruppo può rimuovere membri.");
+  if (targetUserId === actorId)
+    throw new MessageActionError("Usa \"Lascia il gruppo\" per uscire tu stesso.");
+  const result = await db.conversationParticipant.deleteMany({
+    where: { conversationId, userId: targetUserId },
+  });
+  if (result.count === 0)
+    throw new MessageActionError("Questa persona non fa parte del gruppo.");
 }
 
 const TYPING_WINDOW_MS = 6_000;

@@ -48,9 +48,12 @@ import { recordProfileView } from "@/features/visits/service";
 import { listVisitors } from "@/features/visits/queries";
 import {
   MessageActionError,
+  addGroupMembers,
   createGroupConversation,
   leaveGroupConversation,
   markConversationRead,
+  removeGroupMember,
+  renameGroupConversation,
   sendGroupMessage,
   sendMessage,
   setTyping,
@@ -558,7 +561,7 @@ describe("identity and authorization on PostgreSQL", () => {
     const first = await sendMessage(a.id, "marco", { body: "ciao", clientId });
     const retry = await sendMessage(a.id, "marco", { body: "ciao", clientId });
     expect(retry.messageId).toBe(first.messageId);
-    expect(await getMessages(first.conversationId)).toHaveLength(1);
+    expect((await getMessages(first.conversationId)).messages).toHaveLength(1);
 
     const bConvos = await listConversations(b.id);
     expect(bConvos).toMatchObject([{ unreadCount: 1, otherUsername: "giulia" }]);
@@ -624,8 +627,8 @@ describe("identity and authorization on PostgreSQL", () => {
     await sendGroupMessage(a.id, group.id, { body: "ciao a tutti", clientId });
     // Idempotent per clientId, same as direct messages.
     await sendGroupMessage(a.id, group.id, { body: "ciao a tutti", clientId });
-    expect(await getMessages(group.id)).toHaveLength(1);
-    expect((await getMessages(group.id))[0]).toMatchObject({ senderName: "giulia" });
+    expect((await getMessages(group.id)).messages).toHaveLength(1);
+    expect((await getMessages(group.id)).messages[0]).toMatchObject({ senderName: "giulia" });
 
     const bConvos = await listConversations(b.id);
     expect(bConvos).toMatchObject([{ isGroup: true, title: "Weekend", unreadCount: 1 }]);
@@ -655,6 +658,84 @@ describe("identity and authorization on PostgreSQL", () => {
         memberUsernames: ["marco", "sofia"],
       }),
     ).rejects.toThrow(MessageActionError);
+  });
+  it("lets the group creator rename it, add friends, and remove members (but no one else can)", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    const c = await account("sofia");
+    const d = await account("luca");
+    for (const other of ["marco", "sofia", "luca"]) {
+      await sendFriendRequest(a.id, other);
+      const target = other === "marco" ? b.id : other === "sofia" ? c.id : d.id;
+      const pending = await listPendingRequests(target);
+      await respondToFriendRequest(target, pending.incoming[0]!.requestId, true);
+    }
+    const group = await createGroupConversation(a.id, {
+      name: "Weekend",
+      memberUsernames: ["marco", "sofia"],
+    });
+
+    // Only the creator can rename.
+    await expect(
+      renameGroupConversation(b.id, group.id, { name: "Non puoi" }),
+    ).rejects.toThrow(MessageActionError);
+    await renameGroupConversation(a.id, group.id, { name: "Weekend lungo" });
+    expect((await getGroupConversation(a.id, group.id))?.name).toBe("Weekend lungo");
+
+    // luca isn't a member yet and isn't addable by marco (marco isn't friends
+    // with luca), but giulia (the creator, friends with luca) can add him.
+    await addGroupMembers(a.id, group.id, { memberUsernames: ["luca"] });
+    expect((await getGroupConversation(a.id, group.id))?.members).toHaveLength(4);
+
+    // Only the creator can remove someone else.
+    await expect(
+      removeGroupMember(b.id, group.id, c.id),
+    ).rejects.toThrow(MessageActionError);
+    await expect(
+      removeGroupMember(a.id, group.id, a.id),
+    ).rejects.toThrow(MessageActionError);
+    await removeGroupMember(a.id, group.id, c.id);
+    expect((await getGroupConversation(a.id, group.id))?.members).toHaveLength(3);
+  });
+  it("paginates messages: most recent page first, then older ones via cursor", async () => {
+    const a = await account("giulia");
+    const b = await account("marco");
+    await sendFriendRequest(a.id, "marco");
+    const pending = await listPendingRequests(b.id);
+    await respondToFriendRequest(b.id, pending.incoming[0]!.requestId, true);
+    const { conversationId } = await sendMessage(a.id, "marco", {
+      body: "messaggio 0",
+      clientId: randomUUID(),
+    });
+    // Bulk-insert the rest directly with staggered timestamps: 55 total
+    // messages, one more than a single page, to force the cursor path
+    // without 55 sequential sendMessage transactions.
+    const base = Date.now();
+    await db.message.createMany({
+      data: Array.from({ length: 54 }, (_, i) => ({
+        conversationId,
+        senderId: a.id,
+        clientId: randomUUID(),
+        body: `messaggio ${i + 1}`,
+        createdAt: new Date(base + (i + 1) * 1000),
+      })),
+    });
+
+    const firstPage = await getMessages(conversationId);
+    expect(firstPage.messages).toHaveLength(50);
+    expect(firstPage.messages[0]!.body).toBe("messaggio 5");
+    expect(firstPage.messages[49]!.body).toBe("messaggio 54");
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    const secondPage = await getMessages(conversationId, firstPage.nextCursor!);
+    expect(secondPage.messages.map((m) => m.body)).toEqual([
+      "messaggio 0",
+      "messaggio 1",
+      "messaggio 2",
+      "messaggio 3",
+      "messaggio 4",
+    ]);
+    expect(secondPage.nextCursor).toBeNull();
   });
   it("shows online/typing status only when the other user opted in via showOnline", async () => {
     const a = await account("giulia");

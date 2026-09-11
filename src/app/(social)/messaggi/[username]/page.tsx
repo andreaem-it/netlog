@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/server/authorization/session";
 import {
@@ -13,17 +14,20 @@ export const metadata = { title: "Conversazione" };
 
 export default async function ConversationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ cursor?: string }>;
 }) {
   const { username } = await params;
+  const { cursor } = await searchParams;
   const user = await requireUser();
   const conversation = await getConversationWithUsername(user.id, username);
   if (!conversation) notFound();
-  const messages = conversation.conversationId
-    ? await getMessages(conversation.conversationId)
-    : [];
-  if (conversation.conversationId)
+  const { messages, nextCursor } = conversation.conversationId
+    ? await getMessages(conversation.conversationId, cursor)
+    : { messages: [], nextCursor: null };
+  if (conversation.conversationId && !cursor)
     await markConversationRead(user.id, conversation.conversationId);
   return (
     <>
@@ -43,6 +47,14 @@ export default async function ConversationPage({
         </div>
       </div>
       <section className="card card-body stack">
+        {nextCursor && (
+          <Link
+            href={`/messaggi/${username}?cursor=${encodeURIComponent(nextCursor)}`}
+            className="text-link"
+          >
+            Carica messaggi precedenti
+          </Link>
+        )}
         {messages.length === 0 && (
           <p className="muted">Nessun messaggio ancora. Scrivi il primo qui sotto.</p>
         )}
