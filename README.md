@@ -10,7 +10,7 @@ Applicazione Next.js 16 centrata sui profili, con nome e descrizione configurati
 - Recupero password con token monouso di 30 minuti, invio email, protezione dai tentativi ripetuti e revoca delle sessioni precedenti.
 - Home personale, profilo pubblico, modifica di nome/bio/città/data di nascita (facoltativa, mai pubblica) e visibilità pubblico/privato.
 - Ricerca paginata dei profili pubblici e discoverable, su `/persone`, con esclusione automatica degli utenti bloccati.
-- Avatar e copertina personalizzati (JPEG/PNG/WebP, fino a 5&nbsp;MB), caricati direttamente dal browser su Vercel Blob e collegati al profilo.
+- Avatar e copertina personalizzati (JPEG/PNG/WebP, fino a 5&nbsp;MB), con ritaglio/zoom prima del caricamento (viewport trascinabile, canvas nativo, nessuna libreria), caricati direttamente dal browser su Vercel Blob e collegati al profilo.
 - Amicizie: richieste, accettazione/rifiuto, annullamento, rimozione e blocco/sblocco utenti, con gestione atomica delle richieste incrociate e delle richieste duplicate a livello di database. Pagina `/amici` per gestire richieste, amici e persone bloccate; azioni disponibili anche dal profilo pubblico.
 - Post testuali con visibilità pubblico/solo amici/privato, like e commenti, feed cronologico in home (post propri + amici + pubblici, esclusi gli utenti bloccati). Le immagini nei post non sono ancora supportate.
 - Notifiche (richiesta di amicizia, accettazione, like, commento, visita profilo) su `/notifiche`, con segna-tutte-come-lette.
