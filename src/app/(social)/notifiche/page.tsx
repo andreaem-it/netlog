@@ -2,17 +2,9 @@ import Link from "next/link";
 import { requireUser } from "@/server/authorization/session";
 import { listNotifications } from "@/features/notifications/queries";
 import { markAllNotificationsReadAction } from "@/features/notifications/actions";
+import { notificationText } from "@/features/notifications/copy";
 
 export const metadata = { title: "Notifiche" };
-
-const MESSAGE: Record<string, (actor: string) => string> = {
-  FRIEND_REQUEST: (actor) => `${actor} ti ha inviato una richiesta di amicizia.`,
-  FRIEND_ACCEPTED: (actor) => `${actor} ha accettato la tua richiesta di amicizia.`,
-  POST_LIKE: (actor) => `A ${actor} piace un tuo post.`,
-  POST_COMMENT: (actor) => `${actor} ha commentato un tuo post.`,
-  PROFILE_VIEW: (actor) => `${actor} ha visitato il tuo profilo.`,
-  MESSAGE: (actor) => `Nuovo messaggio da ${actor}.`,
-};
 
 export default async function NotifichePage({
   searchParams,
@@ -44,8 +36,7 @@ export default async function NotifichePage({
           )}
           {notifications.map((notification) => {
             const actorName = notification.actorName ?? "Qualcuno";
-            const label =
-              MESSAGE[notification.type]?.(actorName) ?? "Nuova notifica.";
+            const label = notificationText(notification.type, actorName);
             const href = notification.actorUsername
               ? `/u/${notification.actorUsername}`
               : "/home";

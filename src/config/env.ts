@@ -95,6 +95,21 @@ export function getMailEnv() {
   return env;
 }
 
+// Push notifications are an enhancement, not a hard requirement: if the
+// VAPID keys aren't set (e.g. this environment hasn't generated/configured
+// them yet), the feature silently no-ops instead of throwing everywhere a
+// notification is created — same reasoning as an empty ADMIN_EMAILS below.
+export function getVapidKeys() {
+  const publicKey = clean(process.env.VAPID_PUBLIC_KEY);
+  const privateKey = clean(process.env.VAPID_PRIVATE_KEY);
+  if (!publicKey || !privateKey) return null;
+  return {
+    publicKey,
+    privateKey,
+    subject: clean(process.env.VAPID_SUBJECT) ?? "mailto:support@example.test",
+  };
+}
+
 // ponytail: a plain email allowlist is enough moderation access control for
 // this stage — no admin role/permissions system exists yet, and one row of
 // config beats a users.is_admin column with nobody able to set it in prod.

@@ -4,12 +4,15 @@ import { ProfileForm } from "@/features/profiles/components/profile-form";
 import { MediaUploader } from "@/features/profiles/components/media-uploader";
 import { ResendVerificationButton } from "@/features/auth/components/resend-verification-button";
 import { DeleteAccountForm } from "@/features/auth/components/delete-account-form";
+import { PushSubscribeButton } from "@/features/push/components/push-subscribe-button";
+import { getVapidKeys } from "@/config/env";
 import Link from "next/link";
 export const metadata = { title: "Impostazioni" };
 export default async function SettingsPage() {
   const user = await requireUser();
   const profile = await getOwnProfile(user.id);
   if (!profile) throw new Error("Profile missing.");
+  const vapidKeys = getVapidKeys();
   return (
     <>
       <div className="page-title">
@@ -58,6 +61,17 @@ export default async function SettingsPage() {
               currentUrl={profile.coverUrl}
             />
           </div>
+          {vapidKeys && (
+            <>
+              <div className="divider" />
+              <h2>Notifiche push</h2>
+              <p className="muted">
+                Ricevi un avviso sul dispositivo per messaggi, richieste di
+                amicizia e altre novità.
+              </p>
+              <PushSubscribeButton publicKey={vapidKeys.publicKey} />
+            </>
+          )}
           <div className="divider" />
           <h2>Zona pericolosa</h2>
           <DeleteAccountForm />
