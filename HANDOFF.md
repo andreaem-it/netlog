@@ -22,6 +22,7 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 
 | Stato | Priorità | Attività | Area/file | Lock | Verifica |
 |---|---:|---|---|---|---|
+| FATTO | P23 | Scopri persone visuale + avatar nelle liste amici/richieste/bloccati | `src/features/profiles/`, `src/features/friends/`, `src/app/(social)/persone/`, `src/app/(social)/amici/` | — | `pnpm lint`, `pnpm typecheck`, `pnpm test` (21), `pnpm test:integration` (47) verdi; detector UI pulito; verifica visuale locale desktop su 20 profili demo |
 | DA FARE | P22 | Skin/temi personalizzabili del profilo | `src/features/profiles/` | — | Feature Netlog originale mancante. Nessun video (deciso esplicitamente di rimandarlo indefinitamente) |
 | DA FARE | P21 | Guestbook (libro degli ospiti separato dai commenti sui post) | nuova feature `src/features/guestbook/` | — | Feature Netlog originale mancante |
 | DA FARE | P20 | Gruppi/community pubbliche a iscrizione aperta (diverse dalle chat di gruppo già fatte) | nuova feature, probabilmente `src/features/communities/` | — | Feature Netlog originale mancante |
@@ -64,6 +65,7 @@ Formato consigliato: `Claude — 2026-09-10 14:00 — 16:00`.
 
 ## Changelog handoff
 
+- 2026-09-12 — Codex: **Scopri persone visuale e avatar nelle relazioni**. `/persone` non resta più vuota prima della ricerca: mostra subito una griglia fotografica paginata dei profili pubblici e discoverable, escludendo il profilo corrente e i blocchi in entrambe le direzioni; la ricerca ora copre nome, username e città. Avatar reali o iniziali colorate compaiono nel wall e in amici, richieste ricevute/inviate e bloccati. Aggiunto test di integrazione per discovery senza query, esclusione del viewer e propagazione dell'avatar. `pnpm lint`, `pnpm typecheck`, `pnpm test` (21), `pnpm test:integration` (47) verdi; detector Impeccable senza segnalazioni; verificato nel browser locale con 20 profili demo, inclusi invio/accettazione richiesta e resa finale della lista amici. Nessun deploy eseguito in questo passaggio.
 - 2026-09-10 — Codex: creato questo file e registrato il fix login locale non ancora pushato.
 - 2026-09-10 — Claude: verificato lint/typecheck e committato il fix login (`error=` in callback URL gestito senza redirect silenzioso).
 - 2026-09-10 — Claude: tentata verifica login su `https://netlog-phi.vercel.app` con `curl`. `GET /api/auth/csrf` ritorna `{"message":"There was a problem with the server configuration..."}` — stesso blocco P0 della migrazione Neon segnalato da Codex. Login non testabile finché quello non è risolto.

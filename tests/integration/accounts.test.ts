@@ -351,10 +351,26 @@ describe("identity and authorization on PostgreSQL", () => {
     const a = await account("giulia");
     const b = await account("marco");
     const c = await account("marcofoo");
+    await applyProfileMedia({
+      userId: b.id,
+      kind: "avatar",
+      storageKey: "blob://marco-avatar",
+      mimeType: "image/webp",
+      size: 1000,
+      width: 256,
+      height: 256,
+    });
     await db.profile.update({
       where: { userId: c.id },
       data: { discoverable: false },
     });
+    const discovery = await searchProfiles({ query: "", viewerId: a.id });
+    expect(discovery.profiles).toEqual([
+      expect.objectContaining({
+        username: "marco",
+        avatarUrl: "blob://marco-avatar",
+      }),
+    ]);
     await db.block.create({ data: { blockerId: a.id, blockedId: b.id } });
     const results = await searchProfiles({ query: "marco", viewerId: a.id });
     expect(results.profiles).toEqual([]);

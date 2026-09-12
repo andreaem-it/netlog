@@ -11,6 +11,7 @@ import {
   respondToFriendRequestAction,
   unblockUserAction,
 } from "@/features/friends/actions";
+import { Avatar } from "@/components/ui/avatar";
 
 export const metadata = { title: "Amici" };
 
@@ -41,24 +42,30 @@ export default async function AmiciPage({
           <div className="card-body stack">
             <h2>Richieste ricevute</h2>
             {incoming.map((request) => (
-              <div key={request.requestId} className="button-row">
-                <Link href={`/u/${request.username}`}>
-                  {request.name} · @{request.username}
+              <div key={request.requestId} className="relationship-row">
+                <Link href={`/u/${request.username}`} className="relationship-person">
+                  <Avatar name={request.name} src={request.avatarUrl} />
+                  <span>
+                    <strong>{request.name}</strong>
+                    <span className="muted">@{request.username}</span>
+                  </span>
                 </Link>
-                <form action={respondToFriendRequestAction}>
-                  <input type="hidden" name="requestId" value={request.requestId} />
-                  <input type="hidden" name="accept" value="true" />
-                  <button className="button button-primary" type="submit">
-                    Accetta
-                  </button>
-                </form>
-                <form action={respondToFriendRequestAction}>
-                  <input type="hidden" name="requestId" value={request.requestId} />
-                  <input type="hidden" name="accept" value="false" />
-                  <button className="button" type="submit">
-                    Rifiuta
-                  </button>
-                </form>
+                <div className="relationship-actions">
+                  <form action={respondToFriendRequestAction}>
+                    <input type="hidden" name="requestId" value={request.requestId} />
+                    <input type="hidden" name="accept" value="true" />
+                    <button className="button button-primary" type="submit">
+                      Accetta
+                    </button>
+                  </form>
+                  <form action={respondToFriendRequestAction}>
+                    <input type="hidden" name="requestId" value={request.requestId} />
+                    <input type="hidden" name="accept" value="false" />
+                    <button className="button" type="submit">
+                      Rifiuta
+                    </button>
+                  </form>
+                </div>
               </div>
             ))}
           </div>
@@ -70,9 +77,13 @@ export default async function AmiciPage({
           <div className="card-body stack">
             <h2>Richieste inviate</h2>
             {outgoing.map((request) => (
-              <div key={request.requestId} className="button-row">
-                <Link href={`/u/${request.username}`}>
-                  {request.name} · @{request.username}
+              <div key={request.requestId} className="relationship-row">
+                <Link href={`/u/${request.username}`} className="relationship-person">
+                  <Avatar name={request.name} src={request.avatarUrl} />
+                  <span>
+                    <strong>{request.name}</strong>
+                    <span className="muted">@{request.username}</span>
+                  </span>
                 </Link>
                 <form action={cancelFriendRequestAction}>
                   <input type="hidden" name="requestId" value={request.requestId} />
@@ -93,9 +104,13 @@ export default async function AmiciPage({
             <p className="muted">Non hai ancora nessun amico. Cerca qualcuno su Persone.</p>
           )}
           {friends.map((friend) => (
-            <div key={friend.friendshipId} className="button-row">
-              <Link href={`/u/${friend.username}`}>
-                {friend.name} · @{friend.username}
+            <div key={friend.friendshipId} className="relationship-row">
+              <Link href={`/u/${friend.username}`} className="relationship-person">
+                <Avatar name={friend.name} src={friend.avatarUrl} />
+                <span>
+                  <strong>{friend.name}</strong>
+                  <span className="muted">@{friend.username}</span>
+                </span>
               </Link>
               <form action={removeFriendshipAction}>
                 <input type="hidden" name="username" value={friend.username} />
@@ -118,9 +133,13 @@ export default async function AmiciPage({
           <div className="card-body stack">
             <h2>Persone bloccate</h2>
             {blocked.map((person) => (
-              <div key={person.userId} className="button-row">
-                <span>
-                  {person.name} · @{person.username}
+              <div key={person.userId} className="relationship-row">
+                <span className="relationship-person">
+                  <Avatar name={person.name} src={person.avatarUrl} />
+                  <span>
+                    <strong>{person.name}</strong>
+                    <span className="muted">@{person.username}</span>
+                  </span>
                 </span>
                 <form action={unblockUserAction}>
                   <input type="hidden" name="username" value={person.username} />

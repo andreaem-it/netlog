@@ -538,8 +538,130 @@ h3 {
   font-size: 2rem;
   box-shadow: 0 3px 10px #00000009;
 }
+.avatar-showcase {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+}
 .avatar-image {
   object-fit: cover;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.people-search {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  max-width: 620px;
+  margin-bottom: 34px;
+}
+.people-search-field {
+  flex: 1;
+}
+.people-search input {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid #d9dde4;
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+}
+.people-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.people-section-heading h2 {
+  margin: 0;
+}
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 18px;
+}
+.person-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 16px;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.person-tile:hover {
+  background: white;
+  transform: translateY(-2px);
+}
+.person-tile-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 4px 5px;
+}
+.person-tile-copy strong,
+.person-tile-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.person-city {
+  margin-top: 5px;
+  font-size: 0.75rem;
+  color: var(--accent-dark);
+}
+.people-empty {
+  padding: 40px 0;
+  max-width: 480px;
+}
+.people-empty h2 {
+  margin-bottom: 8px;
+}
+.relationship-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.relationship-row:last-child {
+  border-bottom: 0;
+}
+.relationship-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.relationship-person > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.relationship-person strong,
+.relationship-person .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.relationship-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .button-row {
   display: flex;
@@ -976,6 +1098,25 @@ h3 {
   }
   .page-title > .pill {
     display: none;
+  }
+  .people-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .person-tile {
+    gap: 9px;
+    padding: 5px;
+  }
+  .people-search {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .relationship-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .relationship-actions {
+    width: 100%;
   }
   .content-columns > aside {
     display: flex;

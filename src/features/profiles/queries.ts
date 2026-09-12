@@ -107,8 +107,7 @@ export async function searchProfiles(input: {
   cursor?: string;
 }) {
   const query = input.query.trim();
-  if (!query) return { profiles: [], nextCursor: null };
-  let excludedIds: string[] = [];
+  let excludedIds: string[] = input.viewerId ? [input.viewerId] : [];
   if (input.viewerId) {
     const blocks = await db.block.findMany({
       where: {
@@ -119,9 +118,12 @@ export async function searchProfiles(input: {
       },
       select: { blockerId: true, blockedId: true },
     });
-    excludedIds = blocks.map((block) =>
-      block.blockerId === input.viewerId ? block.blockedId : block.blockerId,
-    );
+    excludedIds = [
+      input.viewerId,
+      ...blocks.map((block) =>
+        block.blockerId === input.viewerId ? block.blockedId : block.blockerId,
+      ),
+    ];
   }
   const rows = await db.profile.findMany({
     where: {
@@ -129,15 +131,26 @@ export async function searchProfiles(input: {
       visibility: "PUBLIC",
       user: { status: "ACTIVE" },
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
-      OR: [
-        { username: { contains: query, mode: "insensitive" } },
-        { user: { name: { contains: query, mode: "insensitive" } } },
-      ],
+      ...(query
+        ? {
+            OR: [
+              { username: { contains: query, mode: "insensitive" as const } },
+              { user: { name: { contains: query, mode: "insensitive" as const } } },
+              { city: { contains: query, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
     },
     orderBy: { username: "asc" },
     ...(input.cursor ? { cursor: { username: input.cursor }, skip: 1 } : {}),
     take: SEARCH_PAGE_SIZE + 1,
-    select: { username: true, bio: true, city: true, user: { select: { name: true } } },
+    select: {
+      username: true,
+      bio: true,
+      city: true,
+      avatar: { select: { storageKey: true } },
+      user: { select: { name: true } },
+    },
   });
   const hasMore = rows.length > SEARCH_PAGE_SIZE;
   const page = hasMore ? rows.slice(0, SEARCH_PAGE_SIZE) : rows;
@@ -147,6 +160,7 @@ export async function searchProfiles(input: {
       name: row.user.name,
       bio: row.bio,
       city: row.city,
+      avatarUrl: row.avatar?.storageKey ?? null,
     })),
     nextCursor: hasMore ? page[page.length - 1]!.username : null,
   };

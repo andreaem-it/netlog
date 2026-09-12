@@ -58,8 +58,22 @@ export async function listFriends(userId: string, cursor?: string) {
       id: true,
       userLowId: true,
       userHighId: true,
-      userLow: { select: { name: true, profile: { select: { username: true } } } },
-      userHigh: { select: { name: true, profile: { select: { username: true } } } },
+      userLow: {
+        select: {
+          name: true,
+          profile: {
+            select: { username: true, avatar: { select: { storageKey: true } } },
+          },
+        },
+      },
+      userHigh: {
+        select: {
+          name: true,
+          profile: {
+            select: { username: true, avatar: { select: { storageKey: true } } },
+          },
+        },
+      },
     },
   });
   const hasMore = rows.length > FRIENDS_PAGE_SIZE;
@@ -71,6 +85,7 @@ export async function listFriends(userId: string, cursor?: string) {
         friendshipId: row.id,
         name: other.name,
         username: other.profile?.username ?? "",
+        avatarUrl: other.profile?.avatar?.storageKey ?? null,
       };
     }),
     nextCursor: hasMore ? page[page.length - 1]!.id : null,
@@ -86,7 +101,14 @@ export async function listPendingRequests(userId: string) {
       select: {
         id: true,
         createdAt: true,
-        sender: { select: { name: true, profile: { select: { username: true } } } },
+        sender: {
+          select: {
+            name: true,
+            profile: {
+              select: { username: true, avatar: { select: { storageKey: true } } },
+            },
+          },
+        },
       },
     }),
     db.friendRequest.findMany({
@@ -97,7 +119,12 @@ export async function listPendingRequests(userId: string) {
         id: true,
         createdAt: true,
         recipient: {
-          select: { name: true, profile: { select: { username: true } } },
+          select: {
+            name: true,
+            profile: {
+              select: { username: true, avatar: { select: { storageKey: true } } },
+            },
+          },
         },
       },
     }),
@@ -107,12 +134,14 @@ export async function listPendingRequests(userId: string) {
       requestId: request.id,
       name: request.sender.name,
       username: request.sender.profile?.username ?? "",
+      avatarUrl: request.sender.profile?.avatar?.storageKey ?? null,
       createdAt: request.createdAt,
     })),
     outgoing: outgoing.map((request) => ({
       requestId: request.id,
       name: request.recipient.name,
       username: request.recipient.profile?.username ?? "",
+      avatarUrl: request.recipient.profile?.avatar?.storageKey ?? null,
       createdAt: request.createdAt,
     })),
   };
@@ -124,12 +153,21 @@ export async function listBlockedUsers(userId: string) {
     orderBy: { createdAt: "desc" },
     take: 50,
     select: {
-      blocked: { select: { id: true, name: true, profile: { select: { username: true } } } },
+      blocked: {
+        select: {
+          id: true,
+          name: true,
+          profile: {
+            select: { username: true, avatar: { select: { storageKey: true } } },
+          },
+        },
+      },
     },
   });
   return blocks.map((block) => ({
     userId: block.blocked.id,
     name: block.blocked.name,
     username: block.blocked.profile?.username ?? "",
+    avatarUrl: block.blocked.profile?.avatar?.storageKey ?? null,
   }));
 }

@@ -24,11 +24,14 @@ export function Avatar({
   name,
   src,
   large = false,
+  showcase = false,
 }: {
   name: string;
   src?: string | null;
   large?: boolean;
+  showcase?: boolean;
 }) {
+  const sizeClass = showcase ? " avatar-showcase" : large ? " avatar-large" : "";
   const initials = name
     .split(/\s+/)
     .filter(Boolean)
@@ -42,12 +45,12 @@ export function Avatar({
       <img
         src={src}
         alt={`Avatar di ${name}`}
-        className={`avatar avatar-image${large ? " avatar-large" : ""}`}
+        className={`avatar avatar-image${sizeClass}`}
       />
     );
   return (
     <span
-      className={`avatar${large ? " avatar-large" : ""}`}
+      className={`avatar${sizeClass}`}
       style={hashColor(name)}
       aria-label={`Avatar di ${name}`}
     >
